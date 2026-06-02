@@ -1,5 +1,6 @@
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 import { createWorker } from "tesseract.js";
+import { Canvas } from "canvas";
 
 /**
  * Extracts plain text from a PDF buffer.
@@ -31,7 +32,7 @@ async function extractTextFromPdf(data: Uint8Array): Promise<string> {
     // Group text items by vertical position to preserve lines
     const lines: { [y: number]: string[] } = {};
     
-    for (const item of content.items as any[]) {
+    for (const item of content.items as Array<{ str?: string; transform: number[] }>) {
       if (!item.str?.trim()) continue;
       const y = Math.round(item.transform[5]);
       if (!lines[y]) lines[y] = [];
@@ -63,7 +64,7 @@ async function ocrPdf(data: Uint8Array): Promise<string> {
       const viewport = page.getViewport({ scale: 2.0 });
       
       // Render page to canvas
-      const canvas = new (require("canvas").Canvas)(viewport.width, viewport.height);
+      const canvas = new Canvas(viewport.width, viewport.height);
       const context = canvas.getContext("2d");
       
       await page.render({

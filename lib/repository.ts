@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Exam as PrismaExam, Question as PrismaQuestion } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import type { AnswerMap, AttemptResult, Exam } from "./types";
 
@@ -85,14 +85,14 @@ export const attemptRepo = {
   },
 };
 
-function formatExam(exam: any): Exam {
+function formatExam(exam: PrismaExam & { questions: PrismaQuestion[] }): Exam {
   return {
     id: exam.id,
     title: exam.title,
     description: exam.description,
     source: exam.source,
     createdAt: exam.createdAt.toISOString(),
-    questions: exam.questions.map((q: any) => ({
+    questions: exam.questions.map((q) => ({
       id: q.id,
       prompt: q.prompt,
       options: q.options,
