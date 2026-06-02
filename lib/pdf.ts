@@ -1,6 +1,12 @@
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 import { createWorker } from "tesseract.js";
 
+// Configure pdfjs worker
+if (typeof window === 'undefined') {
+  // Server-side: use the legacy build
+  pdfjsLib.GlobalWorkerOptions.workerSrc = require.resolve('pdfjs-dist/legacy/build/pdf.worker.mjs');
+}
+
 /**
  * Extracts plain text from a PDF buffer.
  * First tries text extraction (for digital PDFs).
