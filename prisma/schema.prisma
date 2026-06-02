@@ -1,0 +1,148 @@
+// Examora production schema. The MVP uses an in-memory repository; this schema
+// is the drop-in for PostgreSQL. See DATABASE.md for migration steps.
+//
+//   npm i -D prisma && npm i @prisma/client
+//   npx prisma migrate dev --name init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum ExamSource {
+  PDF
+  TEXT
+  AI
+}
+
+enum AIRequestKind {
+  EXPLAIN
+  SOLVE
+  GENERATE
+}
+
+model User {
+  id         String      @id @default(cuid())
+  email      String      @unique
+  name       String?
+  role       Role        @default(USER)
+  createdAt  DateTime    @default(now())
+  exams      Exam[]
+  attempts   Attempt[]
+  uploads    Upload[]
+  aiRequests AIRequest[]
+  sessions   Session[]
+  auditLogs  AuditLog[]
+}
+
+model Exam {
+  id          String     @id @default(cuid())
+  title       String
+  description String     @default("")
+  source      ExamSource @default(TEXT)
+  createdAt   DateTime   @default(now())
+  ownerId     String?
+  owner       User?      @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  questions   Question[]
+  attempts    Attempt[]
+
+  @@index([ownerId])
+}
+
+model Question {
+  id           String  @id @default(cuid())
+  examId       String
+  exam         Exam    @relation(fields: [examId], references: [id], onDelete: Cascade)
+  prompt       String
+  options      String[] // array of option texts
+  correctIndex Int
+  explanation  String?
+  order        Int     @default(0)
+
+  @@index([examId])
+}
+
+model Attempt {
+  id           String   @id @default(cuid())
+  examId       String
+  exam         Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  total        Int
+  correct      Int
+  wrong        Int
+  unanswered   Int
+  percentage   Int
+  timeSpentSec Int      @default(0)
+  createdAt    DateTime @default(now())
+  answers      Answer[]
+
+  @@index([examId])
+  @@index([userId])
+}
+
+model Answer {
+  id            String  @id @default(cuid())
+  attemptId     String
+  attempt       Attempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId    String
+  selectedIndex Int?
+  isCorrect     Boolean
+
+  @@index([attemptId])
+}
+
+model Upload {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  fileName  String
+  r2Key     String? // object key in Cloudflare R2
+  bytes     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model AIRequest {
+  id        String        @id @default(cuid())
+  userId    String?
+  user      User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  kind      AIRequestKind
+  provider  String
+  tokens    Int           @default(0)
+  createdAt DateTime      @default(now())
+
+  @@index([userId])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}

@@ -1,0 +1,7 @@
+{
+  "files.associations": {
+    ".dockerignore": "plaintext",
+    ".gitignore": "plaintext",
+    "*.css": "tailwindcss"
+  }
+}
