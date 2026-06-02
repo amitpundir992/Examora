@@ -1,11 +1,11 @@
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 import { createWorker } from "tesseract.js";
-import { Canvas } from "canvas";
 
 /**
  * Extracts plain text from a PDF buffer.
  * First tries text extraction (for digital PDFs).
  * Falls back to OCR (Tesseract) if extracted text is too short (scanned PDFs).
+ * Note: OCR is disabled in serverless environments (Vercel).
  */
 export async function extractPdfText(data: Uint8Array): Promise<string> {
   // Try text extraction first
@@ -16,7 +16,13 @@ export async function extractPdfText(data: Uint8Array): Promise<string> {
     return textContent;
   }
   
-  // Otherwise, try OCR
+  // OCR not available in serverless - return what we have
+  if (process.env.VERCEL || !process.env.NODE_ENV || process.env.NODE_ENV === 'production') {
+    console.warn("OCR not available in serverless environment. Text extraction found limited content.");
+    return textContent;
+  }
+  
+  // Otherwise, try OCR (local development only)
   console.log("Low text content detected, attempting OCR...");
   return await ocrPdf(data);
 }
@@ -54,6 +60,9 @@ async function extractTextFromPdf(data: Uint8Array): Promise<string> {
 }
 
 async function ocrPdf(data: Uint8Array): Promise<string> {
+  // Dynamic import to avoid build errors in serverless
+  const { Canvas } = await import("canvas");
+  
   const pdf = await pdfjsLib.getDocument({ data }).promise;
   const worker = await createWorker("eng");
   const textParts: string[] = [];
@@ -68,7 +77,7 @@ async function ocrPdf(data: Uint8Array): Promise<string> {
       const context = canvas.getContext("2d");
       
       await page.render({
-        canvasContext: context,
+        canvasContext: context as unknown as CanvasRenderingContext2D,
         viewport,
       }).promise;
       
