@@ -90,14 +90,14 @@ function formatExam(exam: PrismaExam & { questions: PrismaQuestion[] }): Exam {
     id: exam.id,
     title: exam.title,
     description: exam.description,
-    source: exam.source,
+    source: exam.source.toLowerCase() as "pdf" | "text" | "ai",
     createdAt: exam.createdAt.toISOString(),
     questions: exam.questions.map((q) => ({
       id: q.id,
       prompt: q.prompt,
-      options: q.options,
+      options: q.options as string[],
       correctIndex: q.correctIndex,
-      explanation: q.explanation,
+      explanation: q.explanation ?? undefined,
     })),
   };
 }
