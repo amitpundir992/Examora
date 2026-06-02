@@ -9,7 +9,7 @@ export default async function Dashboard() {
   const exams = await examRepo.list();
   const attempts = await attemptRepo.list();
   const avg = attempts.length
-    ? Math.round(attempts.reduce((s, a) => s + a.percentage, 0) / attempts.length)
+    ? Math.round(attempts.reduce((s: number, a) => s + a.percentage, 0) / attempts.length)
     : 0;
   const provider = providerName();
 
