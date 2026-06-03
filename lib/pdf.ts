@@ -66,7 +66,8 @@ async function ocrPdf(data: Uint8Array): Promise<string> {
   // Canvas is optional - only works in environments where node-canvas is available
   let Canvas: { new(width: number, height: number): { getContext(type: string): unknown; toBuffer(): Buffer } };
   try {
-    const canvasModule = await import("canvas");
+    // Use Function constructor to avoid TypeScript checking the module at build time
+    const canvasModule = await (new Function('return import("canvas")')() as Promise<{ Canvas: typeof Canvas }>);
     Canvas = canvasModule.Canvas;
   } catch {
     throw new Error("Canvas module not available for OCR. Please ensure node-canvas is installed.");
