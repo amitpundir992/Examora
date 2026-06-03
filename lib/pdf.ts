@@ -63,8 +63,14 @@ async function extractTextFromPdf(data: Uint8Array): Promise<string> {
 }
 
 async function ocrPdf(data: Uint8Array): Promise<string> {
-  // Dynamic import to avoid build errors in serverless
-  const { Canvas } = await import("canvas");
+  // Canvas is optional - only works in environments where node-canvas is available
+  let Canvas;
+  try {
+    const canvasModule = await import("canvas" as any);
+    Canvas = canvasModule.Canvas;
+  } catch {
+    // Canvas not available, OCR will use PDF.js render
+  }
   
   const pdf = await pdfjsLib.getDocument({ data }).promise;
   const worker = await createWorker("eng");

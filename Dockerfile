@@ -7,7 +7,7 @@ WORKDIR /app
 RUN apk add --no-cache openssl
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma
-RUN npm ci
+RUN npm install
 RUN npx prisma generate
 
 FROM node:20-alpine AS builder
