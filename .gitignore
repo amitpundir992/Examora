@@ -49,6 +49,9 @@ next-env.d.ts
 /uploads
 /public/uploads
 
+# pdf.js worker (copied from node_modules during postinstall)
+/public/pdf.worker.min.mjs
+
 # IDE
 .vscode/*
 !.vscode/settings.json

@@ -17,7 +17,8 @@ export async function POST(req: Request) {
       questions: generated.questions,
     });
     return ok(exam, 201);
-  } catch {
-    return fail("AI generation failed. Check your API key or try again.", 502);
+  } catch (err) {
+    console.error("AI generation error:", err);
+    return fail(`AI generation failed. ${err instanceof Error ? err.message : 'Check your API key or try again.'}`, 502);
   }
 }

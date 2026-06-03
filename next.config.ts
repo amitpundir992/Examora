@@ -17,6 +17,13 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  webpack: (config, { isServer }) => {
+    // Copy PDF.js worker to public directory during build
+    if (!isServer) {
+      config.resolve.alias.canvas = false;
+    }
+    return config;
+  },
 };
 
 export default nextConfig;

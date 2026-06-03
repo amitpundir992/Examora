@@ -1,13 +1,8 @@
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 import { createWorker } from "tesseract.js";
 
-// Configure pdfjs worker - use local file from node_modules
-if (typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-    'pdfjs-dist/legacy/build/pdf.worker.min.mjs',
-    import.meta.url
-  ).toString();
-}
+// Configure pdfjs worker - load from public directory (no CDN)
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
 /**
  * Extracts plain text from a PDF buffer.

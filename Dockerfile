@@ -3,13 +3,18 @@
 
 FROM node:20-alpine AS deps
 WORKDIR /app
+# Install OpenSSL for Prisma
+RUN apk add --no-cache openssl
 COPY package.json package-lock.json* ./
-RUN npm install
+COPY prisma ./prisma
+RUN npm ci
 
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# Ensure PDF worker is in public for Next.js build
+RUN node -e "try{require('fs').cpSync('node_modules/pdfjs-dist/legacy/build/pdf.worker.min.mjs','public/pdf.worker.min.mjs')}catch(e){console.log(e)}"
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
