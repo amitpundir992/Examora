@@ -64,12 +64,12 @@ async function extractTextFromPdf(data: Uint8Array): Promise<string> {
 
 async function ocrPdf(data: Uint8Array): Promise<string> {
   // Canvas is optional - only works in environments where node-canvas is available
-  let Canvas;
+  let Canvas: any;
   try {
-    const canvasModule = await import("canvas" as any);
+    const canvasModule = await import("canvas");
     Canvas = canvasModule.Canvas;
   } catch {
-    // Canvas not available, OCR will use PDF.js render
+    throw new Error("Canvas module not available for OCR. Please ensure node-canvas is installed.");
   }
   
   const pdf = await pdfjsLib.getDocument({ data }).promise;
