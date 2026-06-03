@@ -64,7 +64,7 @@ async function extractTextFromPdf(data: Uint8Array): Promise<string> {
 
 async function ocrPdf(data: Uint8Array): Promise<string> {
   // Canvas is optional - only works in environments where node-canvas is available
-  let Canvas: any;
+  let Canvas: unknown;
   try {
     const canvasModule = await import("canvas");
     Canvas = canvasModule.Canvas;
@@ -82,7 +82,7 @@ async function ocrPdf(data: Uint8Array): Promise<string> {
       const viewport = page.getViewport({ scale: 2.0 });
       
       // Render page to canvas
-      const canvas = new Canvas(viewport.width, viewport.height);
+      const canvas = new (Canvas as any)(viewport.width, viewport.height);
       const context = canvas.getContext("2d");
       
       await page.render({
