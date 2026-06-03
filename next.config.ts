@@ -10,6 +10,7 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   output: "standalone",
   serverExternalPackages: ["pdfjs-dist"],
+  turbopack: {},
   images: {
     // Add your storage/CDN host here (e.g. Cloudflare R2 public domain).
     remotePatterns: [],
