@@ -31,7 +31,12 @@ async function geminiComplete(prompt: string): Promise<string> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
   });
-  if (!res.ok) throw new Error(`Gemini error ${res.status}`);
+  if (!res.ok) {
+    if (res.status === 429) {
+      throw new Error("Rate limit exceeded. Please wait a minute and try again, or upgrade your API key for higher limits.");
+    }
+    throw new Error(`Gemini error ${res.status}`);
+  }
   const data = await res.json();
   return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 }
