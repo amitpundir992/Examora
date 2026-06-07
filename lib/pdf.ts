@@ -1,5 +1,3 @@
-import { PDFParse } from "pdf-parse";
-
 /**
  * Extracts plain text from a PDF buffer.
  * First tries text extraction (for digital PDFs).
@@ -28,9 +26,9 @@ export async function extractPdfText(data: Uint8Array): Promise<string> {
 
 async function extractTextFromPdf(data: Uint8Array): Promise<string> {
   const buffer = Buffer.from(data);
-  const parser = new PDFParse({ data: buffer });
-  const result = await parser.getText();
-  await parser.destroy();
+  // Use dynamic import to avoid bundling issues
+  const pdfParse = require("pdf-parse");
+  const result = await pdfParse(buffer);
   return result.text.trim();
 }
 
