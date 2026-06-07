@@ -21,18 +21,18 @@ export async function extractPdfText(data: Uint8Array): Promise<string> {
   
   // Otherwise, try OCR (local development only)
   console.log("Low text content detected, attempting OCR...");
-  return await ocrPdf(data);
+  return await ocrPdf();
 }
 
 async function extractTextFromPdf(data: Uint8Array): Promise<string> {
   const buffer = Buffer.from(data);
-  // Use dynamic import to avoid bundling issues
-  const pdfParse = require("pdf-parse");
+  // pdf-parse@1.1.1 is a CommonJS module
+  const { default: pdfParse } = await import("pdf-parse");
   const result = await pdfParse(buffer);
   return result.text.trim();
 }
 
-async function ocrPdf(_data: Uint8Array): Promise<string> {
+async function ocrPdf(): Promise<string> {
   // OCR is not supported in serverless environments
   // This function is only called in local development
   throw new Error("OCR not implemented for local development. Use text-based PDFs.");
