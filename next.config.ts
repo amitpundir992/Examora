@@ -8,7 +8,6 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  output: "standalone",
   serverExternalPackages: ["pdfjs-dist", "canvas"],
   turbopack: {},
   images: {
@@ -16,10 +15,18 @@ const nextConfig: NextConfig = {
     remotePatterns: [],
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      { 
+        source: "/pdf.worker.min.mjs",
+        headers: [
+          { key: "Content-Type", value: "application/javascript" },
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" }
+        ]
+      }
+    ];
   },
   webpack: (config, { isServer }) => {
-    // Copy PDF.js worker to public directory during build
     if (!isServer) {
       config.resolve.alias.canvas = false;
     }

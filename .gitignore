@@ -50,7 +50,8 @@ next-env.d.ts
 /public/uploads
 
 # pdf.js worker (copied from node_modules during postinstall)
-/public/pdf.worker.min.mjs
+# NOTE: This file MUST be committed for Vercel deployment to work
+# /public/pdf.worker.min.mjs
 
 # IDE
 .vscode/*

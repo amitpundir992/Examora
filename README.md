@@ -51,6 +51,14 @@ GEMINI_API_KEY="your-key-here"
 
 Provider selection is automatic: **Gemini → OpenAI → demo fallback**.
 
+### Deploy to Vercel
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/examora)
+
+**Critical**: Add `GEMINI_API_KEY` to Vercel environment variables (Settings → Environment Variables) or AI features will fail with rate limits.
+
+See [VERCEL_DEPLOYMENT.md](VERCEL_DEPLOYMENT.md) for detailed setup instructions.
+
 ---
 
 ## 📂 Project structure
