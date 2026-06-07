@@ -26,13 +26,15 @@ export async function extractPdfText(data: Uint8Array): Promise<string> {
 
 async function extractTextFromPdf(data: Uint8Array): Promise<string> {
   const buffer = Buffer.from(data);
-  // pdf-parse is a CommonJS module
-  const pdfParse = (await import("pdf-parse")) as any;
+  // pdf-parse is a CommonJS module - import it dynamically
+  const pdfParse = (await import("pdf-parse")) as unknown as (
+    dataBuffer: Buffer
+  ) => Promise<{ text: string; numpages: number; info: unknown }>;
   const parsed = await pdfParse(buffer);
   return parsed.text.trim();
 }
 
-async function ocrPdf(data: Uint8Array): Promise<string> {
+async function ocrPdf(_data: Uint8Array): Promise<string> {
   // OCR is not supported in serverless environments
   // This function is only called in local development
   throw new Error("OCR not implemented for local development. Use text-based PDFs.");
