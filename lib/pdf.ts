@@ -27,9 +27,7 @@ export async function extractPdfText(data: Uint8Array): Promise<string> {
 async function extractTextFromPdf(data: Uint8Array): Promise<string> {
   const buffer = Buffer.from(data);
   // pdf-parse is a CommonJS module - import it dynamically
-  const module = await import("pdf-parse");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const pdfParse = (module.default || module) as any;
+  const pdfParse = (await import("pdf-parse")).default;
   const parsed = await pdfParse(buffer);
   return parsed.text.trim();
 }
