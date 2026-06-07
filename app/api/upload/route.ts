@@ -48,7 +48,11 @@ export async function POST(req: Request) {
         console.error("AI structuring failed:", err);
         // If AI also fails, return what regex found (or error if nothing)
         if (questions.length === 0) {
-          return fail("Could not parse PDF. Format not recognized by regex parser and AI unavailable.", 422);
+          const errorMsg = err instanceof Error ? err.message : "Unknown error";
+          if (errorMsg.includes("503")) {
+            return fail("AI service temporarily unavailable (Google 503). Please try again in 1-2 minutes, or use a standard MCQ format PDF.", 503);
+          }
+          return fail(`Could not parse PDF. Format not recognized by regex parser. AI error: ${errorMsg}`, 422);
         }
       }
     }
