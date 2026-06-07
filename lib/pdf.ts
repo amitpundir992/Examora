@@ -8,8 +8,6 @@ export async function extractPdfText(data: Uint8Array): Promise<string> {
     data,
     useWorkerFetch: false,
     isEvalSupported: false,
-    useSystemFonts: true,
-    disableWorker: true,
   }).promise;
   
   const textParts: string[] = [];
