@@ -1,4 +1,18 @@
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
+import { createWorker } from "tesseract.js";
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+// Configure pdfjs worker
+if (typeof window === 'undefined') {
+  // Server-side: use file:// URL to the public directory
+  const publicDir = join(process.cwd(), 'public');
+  const workerUrl = `file://${publicDir.replace(/\\/g, '/')}/pdf.worker.min.mjs`;
+  pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+} else {
+  // Client-side: use HTTP URL from public directory
+  pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+}
 
 /**
  * Extracts plain text from a PDF buffer using pdfjs-dist.
