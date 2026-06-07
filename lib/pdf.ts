@@ -1,23 +1,35 @@
-import PDFParser from "pdf2json";
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
+
+// Disable worker for serverless compatibility
+pdfjsLib.GlobalWorkerOptions.workerSrc = "";
 
 /**
- * Extracts plain text from a PDF buffer.
+ * Extracts plain text from a PDF buffer using pdfjs-dist.
  */
 export async function extractPdfText(data: Uint8Array): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const pdfParser = new PDFParser();
-
-    pdfParser.on("pdfParser_dataError", (errData: Error | { parserError: Error }) => {
-      const error = errData instanceof Error ? errData : errData.parserError;
-      reject(error);
-    });
-
-    pdfParser.on("pdfParser_dataReady", () => {
-      // getRawTextContent is not in types but exists at runtime
-      const text = (pdfParser as unknown as { getRawTextContent(): string }).getRawTextContent();
-      resolve(text.trim());
-    });
-
-    pdfParser.parseBuffer(Buffer.from(data));
-  });
+  const pdf = await pdfjsLib.getDocument({ 
+    data,
+    useWorkerFetch: false,
+    isEvalSupported: false,
+    useSystemFonts: true,
+  }).promise;
+  
+  const textParts: string[] = [];
+  
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    
+    // Extract text items
+    const pageText = content.items
+      .map((item) => {
+        if ("str" in item) return item.str;
+        return "";
+      })
+      .join(" ");
+    
+    textParts.push(pageText);
+  }
+  
+  return textParts.join("\n\n").trim();
 }
