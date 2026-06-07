@@ -1,7 +1,9 @@
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 
-// Disable worker for serverless compatibility
-pdfjsLib.GlobalWorkerOptions.workerSrc = "";
+// Configure for serverless: disable worker
+if (typeof pdfjsLib.GlobalWorkerOptions !== "undefined") {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = false as unknown as string;
+}
 
 /**
  * Extracts plain text from a PDF buffer using pdfjs-dist.
