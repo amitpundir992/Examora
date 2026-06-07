@@ -1,3 +1,5 @@
+import { PDFParse } from "pdf-parse";
+
 /**
  * Extracts plain text from a PDF buffer.
  * First tries text extraction (for digital PDFs).
@@ -26,10 +28,10 @@ export async function extractPdfText(data: Uint8Array): Promise<string> {
 
 async function extractTextFromPdf(data: Uint8Array): Promise<string> {
   const buffer = Buffer.from(data);
-  // pdf-parse is a CommonJS module - import it dynamically
-  const pdfParse = (await import("pdf-parse")).default;
-  const parsed = await pdfParse(buffer);
-  return parsed.text.trim();
+  const parser = new PDFParse({ data: buffer });
+  const result = await parser.getText();
+  await parser.destroy();
+  return result.text.trim();
 }
 
 async function ocrPdf(_data: Uint8Array): Promise<string> {
