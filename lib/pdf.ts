@@ -27,7 +27,8 @@ export async function extractPdfText(data: Uint8Array): Promise<string> {
 async function extractTextFromPdf(data: Uint8Array): Promise<string> {
   const buffer = Buffer.from(data);
   // pdf-parse is a CommonJS module - import it dynamically
-  const pdfParse = (await import("pdf-parse")) as unknown as (
+  const module = await import("pdf-parse");
+  const pdfParse = (module.default || module) as (
     dataBuffer: Buffer
   ) => Promise<{ text: string; numpages: number; info: unknown }>;
   const parsed = await pdfParse(buffer);
