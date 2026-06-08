@@ -48,7 +48,7 @@ async function main() {
     },
   });
 
-  console.log("✅ Seeded demo exam");
+  console.log("✅ Seeded demo exam!!");
 }
 
 main()
