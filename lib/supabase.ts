@@ -14,7 +14,7 @@ export async function uploadPdf(file: Buffer, filename: string): Promise<string 
   }
 
   const { data, error } = await supabase.storage
-    .from("pdfs")
+    .from("Examora-pdfs")
     .upload(`${Date.now()}-${filename}`, file, {
       contentType: "application/pdf",
       cacheControl: "3600",
@@ -23,7 +23,7 @@ export async function uploadPdf(file: Buffer, filename: string): Promise<string 
   if (error) throw error;
   
   const { data: { publicUrl } } = supabase.storage
-    .from("pdfs")
+    .from("Examora-pdfs")
     .getPublicUrl(data.path);
 
   return publicUrl;
