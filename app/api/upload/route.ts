@@ -4,6 +4,7 @@ import { parseMcqText } from "@/lib/parser";
 import { extractPdfText } from "@/lib/pdf";
 import { structureExam } from "@/lib/ai/service";
 import { ok, fail, parseBody, guard } from "@/lib/api";
+import { uploadPdf } from "@/lib/supabase";
 
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 
@@ -22,6 +23,16 @@ export async function POST(req: Request) {
 
     const title = (form.get("title") as string)?.trim() || file.name.replace(/\.[^.]+$/, "");
     const bytes = new Uint8Array(await file.arrayBuffer());
+
+    // Upload PDF to Supabase storage
+    let pdfUrl: string | undefined;
+    if (file.name.toLowerCase().endsWith(".pdf")) {
+      try {
+        pdfUrl = await uploadPdf(Buffer.from(bytes), file.name);
+      } catch (err) {
+        console.error("Supabase upload failed:", err);
+      }
+    }
 
     let text: string;
     try {
@@ -63,11 +74,11 @@ export async function POST(req: Request) {
 
     const exam = await examRepo.create({
       title,
-      description: `Imported from PDF • ${questions.length} questions`,
+      description: `Imported from PDF • ${questions.length} questions${pdfUrl ? " • [Original PDF stored]" : ""}`,
       source: "pdf",
       questions,
     });
-    return ok(exam, 201);
+    return ok({ ...exam, pdfUrl }, 201);
   }
 
   // ---- Pasted text / .txt (application/json) ----
