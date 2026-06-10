@@ -24,8 +24,8 @@ export async function POST(req: Request) {
     const title = (form.get("title") as string)?.trim() || file.name.replace(/\.[^.]+$/, "");
     const bytes = new Uint8Array(await file.arrayBuffer());
 
-    // Upload PDF to Supabase storage
-    let pdfUrl: string | undefined;
+    // Upload PDF to Supabase storage (optional)
+    let pdfUrl: string | null = null;
     if (file.name.toLowerCase().endsWith(".pdf")) {
       try {
         pdfUrl = await uploadPdf(Buffer.from(bytes), file.name);

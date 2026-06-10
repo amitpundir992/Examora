@@ -1,11 +1,18 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabase = supabaseUrl && supabaseAnonKey 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
 
-export async function uploadPdf(file: Buffer, filename: string): Promise<string> {
+export async function uploadPdf(file: Buffer, filename: string): Promise<string | null> {
+  if (!supabase) {
+    console.warn("Supabase not configured, skipping PDF upload");
+    return null;
+  }
+
   const { data, error } = await supabase.storage
     .from("pdfs")
     .upload(`${Date.now()}-${filename}`, file, {
