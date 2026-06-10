@@ -24,13 +24,17 @@ export async function POST(req: Request) {
     const title = (form.get("title") as string)?.trim() || file.name.replace(/\.[^.]+$/, "");
     const bytes = new Uint8Array(await file.arrayBuffer());
 
-    // Upload PDF to Supabase storage (optional)
+    // Upload PDF to Supabase storage (required)
     let pdfUrl: string | null = null;
     if (file.name.toLowerCase().endsWith(".pdf")) {
       try {
         pdfUrl = await uploadPdf(Buffer.from(bytes), file.name);
+        if (!pdfUrl) {
+          return fail("Supabase storage not configured. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to .env", 500);
+        }
       } catch (err) {
         console.error("Supabase upload failed:", err);
+        return fail(`Failed to upload PDF to storage: ${err instanceof Error ? err.message : "Unknown error"}`, 500);
       }
     }
 
@@ -74,7 +78,7 @@ export async function POST(req: Request) {
 
     const exam = await examRepo.create({
       title,
-      description: `Imported from PDF • ${questions.length} questions${pdfUrl ? " • [Original PDF stored]" : ""}`,
+      description: `Imported from PDF • ${questions.length} questions • [PDF stored in Supabase]`,
       source: "pdf",
       questions,
     });
