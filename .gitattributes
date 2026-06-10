@@ -1,0 +1,3 @@
+# Exclude third-party libraries and build artifacts from language statistics
+public/** linguist-vendored
+.next/** linguist-generated
