@@ -24,14 +24,38 @@ function activeProvider(): Provider {
 // ---- Low-level text completion per provider ----
 
 async function geminiComplete(prompt: string): Promise<string> {
-  const model = process.env.GEMINI_MODEL ?? "gemini-pro";
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-  });
-  if (!res.ok) {
+  const modelPreference = process.env.GEMINI_MODEL ?? "gemini-1.5-flash-latest";
+  const fallbackModels = [
+    modelPreference,
+    "gemini-1.5-flash-latest",
+    "gemini-1.5-flash",
+    "gemini-1.5-pro-latest", 
+    "gemini-1.5-pro",
+    "gemini-pro",
+    "gemini-1.0-pro"
+  ];
+  
+  const uniqueModels = [...new Set(fallbackModels)];
+  
+  for (const model of uniqueModels) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+    });
+    
+    if (res.ok) {
+      const data = await res.json();
+      return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    }
+    
+    if (res.status === 404) {
+      console.warn(`Model ${model} not available, trying next...`);
+      continue;
+    }
+    
+    // Non-404 errors should be thrown immediately
     const errorText = await res.text();
     console.error(`Gemini API error ${res.status}:`, errorText.substring(0, 500));
     if (res.status === 429) {
@@ -39,8 +63,8 @@ async function geminiComplete(prompt: string): Promise<string> {
     }
     throw new Error(`Gemini error ${res.status}`);
   }
-  const data = await res.json();
-  return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  
+  throw new Error("No available Gemini models found. Please check your API key at https://aistudio.google.com/apikey");
 }
 
 async function openaiComplete(prompt: string): Promise<string> {
