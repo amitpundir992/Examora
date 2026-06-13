@@ -59,13 +59,25 @@ async function openaiComplete(prompt: string): Promise<string> {
 }
 
 async function complete(prompt: string): Promise<string> {
-  switch (activeProvider()) {
-    case "gemini":
-      return geminiComplete(prompt);
-    case "openai":
-      return openaiComplete(prompt);
-    default:
-      return "";
+  const provider = activeProvider();
+  
+  // Try primary provider
+  try {
+    switch (provider) {
+      case "gemini":
+        return await geminiComplete(prompt);
+      case "openai":
+        return await openaiComplete(prompt);
+      default:
+        return "";
+    }
+  } catch (error) {
+    // Fallback: if Gemini fails with 503, try OpenAI
+    if (provider === "gemini" && process.env.OPENAI_API_KEY && error instanceof Error && error.message.includes("503")) {
+      console.warn("Gemini 503, falling back to OpenAI...");
+      return await openaiComplete(prompt);
+    }
+    throw error;
   }
 }
 
