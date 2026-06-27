@@ -45,7 +45,6 @@ The app works without keys (demo answers). For real AI, add **one** key to `.env
 
 ```bash
 cp .env.example .env
-# Free Gemini key: https://aistudio.google.com/apikey
 GEMINI_API_KEY="your-key-here"
 ```
 

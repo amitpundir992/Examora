@@ -24,47 +24,26 @@ function activeProvider(): Provider {
 // ---- Low-level text completion per provider ----
 
 async function geminiComplete(prompt: string): Promise<string> {
-  const modelPreference = process.env.GEMINI_MODEL ?? "gemini-1.5-flash-latest";
-  const fallbackModels = [
-    modelPreference,
-    "gemini-1.5-flash-latest",
-    "gemini-1.5-flash",
-    "gemini-1.5-pro-latest", 
-    "gemini-1.5-pro",
-    "gemini-pro",
-    "gemini-1.0-pro"
-  ];
-  
-  const uniqueModels = [...new Set(fallbackModels)];
-  
-  for (const model of uniqueModels) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`;
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-    });
-    
-    if (res.ok) {
-      const data = await res.json();
-      return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-    }
-    
-    if (res.status === 404) {
-      console.warn(`Model ${model} not available, trying next...`);
-      continue;
-    }
-    
-    // Non-404 errors should be thrown immediately
+  const model = process.env.GEMINI_MODEL ?? "gemini-2.0-flash";
+  const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+  });
+  if (!res.ok) {
     const errorText = await res.text();
     console.error(`Gemini API error ${res.status}:`, errorText.substring(0, 500));
     if (res.status === 429) {
       throw new Error("Rate limit exceeded. Please wait a minute and try again, or upgrade your API key for higher limits.");
     }
+    if (res.status === 503) {
+      throw new Error(`Gemini error ${res.status}`);
+    }
     throw new Error(`Gemini error ${res.status}`);
   }
-  
-  throw new Error("No available Gemini models found. Please check your API key at https://aistudio.google.com/apikey");
+  const data = await res.json();
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 }
 
 async function openaiComplete(prompt: string): Promise<string> {
@@ -99,7 +78,11 @@ async function complete(prompt: string): Promise<string> {
     // Fallback: if Gemini fails with 503, try OpenAI
     if (provider === "gemini" && process.env.OPENAI_API_KEY && error instanceof Error && error.message.includes("503")) {
       console.warn("Gemini 503, falling back to OpenAI...");
-      return await openaiComplete(prompt);
+      try {
+        return await openaiComplete(prompt);
+      } catch {
+        // OpenAI also failed, will throw original error
+      }
     }
     throw error;
   }
@@ -164,12 +147,24 @@ export async function generate(input: GenerateInput): Promise<GeneratedExam> {
     return { title: `${input.topic} (${input.difficulty})`, questions };
   }
 
-  const parsed = extractJson<{ title?: string; questions?: Array<Partial<Question>> }>(
-    await complete(generatePrompt(input)),
-  );
-  const questions = mapQuestions(parsed?.questions);
-  if (questions.length === 0) throw new Error("AI returned no usable questions.");
-  return { title: parsed?.title?.trim() || `${input.topic} (${input.difficulty})`, questions };
+  try {
+    const parsed = extractJson<{ title?: string; questions?: Array<Partial<Question>> }>(
+      await complete(generatePrompt(input)),
+    );
+    const questions = mapQuestions(parsed?.questions);
+    if (questions.length === 0) throw new Error("AI returned no usable questions.");
+    return { title: parsed?.title?.trim() || `${input.topic} (${input.difficulty})`, questions };
+  } catch (error) {
+    console.error("AI generation failed, using demo fallback:", error);
+    const questions: Question[] = Array.from({ length: input.count }, (_, i) => ({
+      id: uid("q"),
+      prompt: `[Demo] ${input.topic} — question ${i + 1} (${input.difficulty})?`,
+      options: ["Option A", "Option B", "Option C", "Option D"],
+      correctIndex: i % 4,
+      explanation: "Demo question (AI unavailable). Try again in a few minutes.",
+    }));
+    return { title: `${input.topic} (${input.difficulty})`, questions };
+  }
 }
 
 /** Normalize loosely-typed AI question objects into valid Questions. */
