@@ -30,8 +30,19 @@ export function solvePrompt(input: SolveInput): string {
 
 export function generatePrompt(input: GenerateInput): string {
   return [
-    `Generate ${input.count} ${input.difficulty} multiple-choice questions about: ${input.topic}.`,
-    "Each question must have exactly 4 options and one correct answer.",
+    `Generate ${input.count} realistic, detailed ${input.difficulty} multiple-choice questions about: ${input.topic}.`,
+    "",
+    "CRITICAL REQUIREMENTS:",
+    "- Generate SPECIFIC, REALISTIC questions with concrete subject matter - NOT generic placeholders",
+    "- Each question must test actual knowledge about the topic",
+    "- Use proper terminology, facts, and examples related to the topic",
+    "- Make distractors (wrong answers) plausible but clearly incorrect",
+    "- Each question must have exactly 4 options (A, B, C, D)",
+    "- Include a brief explanation for the correct answer",
+    "",
+    "BAD (generic): 'What is the main concept of ${input.topic}? A) Option A, B) Option B'",
+    "GOOD (specific): Use real facts, code examples, dates, formulas, or scenarios",
+    "",
     "Respond as strict JSON only, no markdown, in this exact shape:",
     '{"title": string, "questions": [{"prompt": string, "options": [string,string,string,string], "correctIndex": number, "explanation": string}]}',
   ].join("\n");

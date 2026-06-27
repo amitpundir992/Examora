@@ -13,10 +13,11 @@ export interface GeneratedExam {
   questions: Question[];
 }
 
-type Provider = "gemini" | "openai" | "mock";
+type Provider = "gemini" | "groq" | "openai" | "mock";
 
 function activeProvider(): Provider {
   if (process.env.GEMINI_API_KEY) return "gemini";
+  if (process.env.GROQ_API_KEY) return "groq";
   if (process.env.OPENAI_API_KEY) return "openai";
   return "mock";
 }
@@ -24,7 +25,7 @@ function activeProvider(): Provider {
 // ---- Low-level text completion per provider ----
 
 async function geminiComplete(prompt: string): Promise<string> {
-  const model = process.env.GEMINI_MODEL ?? "gemini-2.0-flash";
+  const model = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
   const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`;
   const res = await fetch(url, {
     method: "POST",
@@ -44,6 +45,21 @@ async function geminiComplete(prompt: string): Promise<string> {
   }
   const data = await res.json();
   return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+}
+
+async function groqComplete(prompt: string): Promise<string> {
+  const model = process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile";
+  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }] }),
+  });
+  if (!res.ok) throw new Error(`Groq error ${res.status}`);
+  const data = await res.json();
+  return data?.choices?.[0]?.message?.content ?? "";
 }
 
 async function openaiComplete(prompt: string): Promise<string> {
@@ -69,19 +85,30 @@ async function complete(prompt: string): Promise<string> {
     switch (provider) {
       case "gemini":
         return await geminiComplete(prompt);
+      case "groq":
+        return await groqComplete(prompt);
       case "openai":
         return await openaiComplete(prompt);
       default:
         return "";
     }
   } catch (error) {
-    // Fallback: if Gemini fails with 503, try OpenAI
-    if (provider === "gemini" && process.env.OPENAI_API_KEY && error instanceof Error && error.message.includes("503")) {
-      console.warn("Gemini 503, falling back to OpenAI...");
-      try {
-        return await openaiComplete(prompt);
-      } catch {
-        // OpenAI also failed, will throw original error
+    // Fallback: if Gemini fails with 503, try Groq or OpenAI
+    if (provider === "gemini" && error instanceof Error && error.message.includes("503")) {
+      if (process.env.GROQ_API_KEY) {
+        console.warn("Gemini 503, falling back to Groq...");
+        try {
+          return await groqComplete(prompt);
+        } catch {
+          // Groq failed, continue to throw original error
+        }
+      } else if (process.env.OPENAI_API_KEY) {
+        console.warn("Gemini 503, falling back to OpenAI...");
+        try {
+          return await openaiComplete(prompt);
+        } catch {
+          // OpenAI also failed, will throw original error
+        }
       }
     }
     throw error;
