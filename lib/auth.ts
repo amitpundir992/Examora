@@ -5,10 +5,8 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
-// Ensure DATABASE_URL is available
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL is not defined in .env file");
-}
+// Database URL - use a placeholder during build time
+const databaseUrl = process.env.DATABASE_URL || "postgresql://placeholder:placeholder@localhost:5432/placeholder";
 
 // Prisma singleton to prevent multiple instances in development
 const globalForPrisma = globalThis as unknown as {
@@ -16,7 +14,7 @@ const globalForPrisma = globalThis as unknown as {
   pool: Pool | undefined;
 };
 
-const pool = globalForPrisma.pool ?? new Pool({ connectionString: process.env.DATABASE_URL });
+const pool = globalForPrisma.pool ?? new Pool({ connectionString: databaseUrl });
 const adapter = new PrismaPg(pool);
 
 const prisma = globalForPrisma.prisma ?? new PrismaClient({
