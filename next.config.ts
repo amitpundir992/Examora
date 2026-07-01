@@ -36,7 +36,13 @@ const nextConfig: NextConfig = {
   turbopack: {},
   images: {
     // Add your storage/CDN host here (e.g. Cloudflare R2 public domain).
-    remotePatterns: [],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+        pathname: "**",
+      },
+    ],
   },
   async headers() {
     return [

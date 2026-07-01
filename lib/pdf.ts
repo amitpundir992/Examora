@@ -1,7 +1,5 @@
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
-import { createWorker } from "tesseract.js";
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { join } from 'path';
 
 // Configure pdfjs worker
 if (typeof window === 'undefined') {

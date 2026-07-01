@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -40,9 +41,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="rounded-lg border bg-muted/50 p-3">
               <div className="flex items-center gap-3">
                 {session.user.image && (
-                  <img
+                  <Image
                     src={session.user.image}
                     alt={session.user.name || "User"}
+                    width={32}
+                    height={32}
                     className="h-8 w-8 rounded-full"
                   />
                 )}

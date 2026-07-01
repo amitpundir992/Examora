@@ -29,6 +29,7 @@ if (process.env.NODE_ENV !== "production") {
   globalForPrisma.pool = pool;
 }
 
+// @ts-expect-error - NextAuth v5 beta type compatibility
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -60,7 +61,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
   },
   callbacks: {
-    async jwt({ token, user }) {
+    jwt({ token, user }: { token: Record<string, unknown>; user: Record<string, unknown> | undefined }) {
       // Initial sign in - only store essential user data
       if (user) {
         token.id = user.id;
@@ -71,12 +72,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
       return token;
     },
-    async session({ session, token }) {
+    session({ session, token }: { session: Record<string, unknown>; token: Record<string, unknown> }) {
       if (token && session.user) {
-        session.user.id = token.id as string;
-        session.user.email = token.email as string;
-        session.user.name = token.name as string;
-        session.user.image = token.picture as string;
+        (session.user as Record<string, unknown>).id = token.id as string;
+        (session.user as Record<string, unknown>).email = token.email as string;
+        (session.user as Record<string, unknown>).name = token.name as string;
+        (session.user as Record<string, unknown>).image = token.picture as string;
       }
       return session;
     },

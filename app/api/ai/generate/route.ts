@@ -6,7 +6,7 @@ import { requireAuth } from "@/lib/auth-helpers";
 
 export async function POST(req: Request) {
   // Check authentication first
-  const { error, user } = await requireAuth();
+  const { error } = await requireAuth();
   if (error) return error;
 
   const limited = guard(req, "ai:generate", 10);

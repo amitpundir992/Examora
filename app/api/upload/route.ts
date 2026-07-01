@@ -11,7 +11,7 @@ const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 
 export async function POST(req: Request) {
   // Check authentication first
-  const { error, user } = await requireAuth();
+  const { error } = await requireAuth();
   if (error) return error;
 
   const limited = guard(req, "upload");
