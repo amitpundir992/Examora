@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useSession, signOut } from "next-auth/react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const NAV = [
@@ -9,6 +12,8 @@ const NAV = [
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const { data: session } = useSession();
+
   return (
     <div className="flex min-h-dvh">
       <aside className="hidden w-60 shrink-0 flex-col border-r bg-card p-4 md:flex">
@@ -30,9 +35,34 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </Link>
           ))}
         </nav>
-        <div className="mt-auto flex items-center justify-between px-2">
-          <span className="text-xs text-muted-foreground">v0.1 MVP</span>
-          <ThemeToggle />
+        <div className="mt-auto space-y-4">
+          {session?.user && (
+            <div className="rounded-lg border bg-muted/50 p-3">
+              <div className="flex items-center gap-3">
+                {session.user.image && (
+                  <img
+                    src={session.user.image}
+                    alt={session.user.name || "User"}
+                    className="h-8 w-8 rounded-full"
+                  />
+                )}
+                <div className="flex-1 overflow-hidden">
+                  <p className="truncate text-sm font-medium">{session.user.name}</p>
+                  <p className="truncate text-xs text-muted-foreground">{session.user.email}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                className="mt-3 w-full rounded-md bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+              >
+                Sign out
+              </button>
+            </div>
+          )}
+          <div className="flex items-center justify-between px-2">
+            <span className="text-xs text-muted-foreground">v0.1 MVP</span>
+            <ThemeToggle />
+          </div>
         </div>
       </aside>
 
@@ -41,7 +71,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link href="/" className="font-semibold">
             Examora
           </Link>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            {session?.user && (
+              <button onClick={() => signOut({ callbackUrl: "/login" })} className="text-sm">
+                Sign out
+              </button>
+            )}
+            <ThemeToggle />
+          </div>
         </header>
         <main className="flex-1 p-4 md:p-8">{children}</main>
       </div>

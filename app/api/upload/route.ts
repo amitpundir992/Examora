@@ -5,10 +5,15 @@ import { extractPdfText } from "@/lib/pdf";
 import { structureExam } from "@/lib/ai/service";
 import { ok, fail, parseBody, guard } from "@/lib/api";
 import { uploadPdf } from "@/lib/supabase";
+import { requireAuth } from "@/lib/auth-helpers";
 
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 
 export async function POST(req: Request) {
+  // Check authentication first
+  const { error, user } = await requireAuth();
+  if (error) return error;
+
   const limited = guard(req, "upload");
   if (limited) return limited;
 

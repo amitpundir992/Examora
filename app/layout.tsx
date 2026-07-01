@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { SessionProvider } from "@/components/session-provider";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -20,7 +21,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="min-h-dvh font-sans antialiased">{children}</body>
+      <body className="min-h-dvh font-sans antialiased">
+        <SessionProvider>{children}</SessionProvider>
+      </body>
     </html>
   );
 }

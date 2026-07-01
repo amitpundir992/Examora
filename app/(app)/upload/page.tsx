@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button, Card, Input, Textarea, Spinner, Badge } from "@/components/ui";
+import { ProtectedRoute } from "@/components/protected-route";
 
 const SAMPLE = `1. Which keyword declares a constant in JavaScript?
 A) var
@@ -63,7 +64,8 @@ export default function UploadPage() {
   const canSubmit = file ? true : content.trim().length >= 10;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <ProtectedRoute>
+      <div className="mx-auto max-w-3xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Upload an Exam</h1>
         <p className="text-sm text-muted-foreground">
@@ -113,5 +115,6 @@ export default function UploadPage() {
         </p>
       </Card>
     </div>
+    </ProtectedRoute>
   );
 }

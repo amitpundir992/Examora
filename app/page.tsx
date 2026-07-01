@@ -12,9 +12,10 @@ const FEATURES = [
 ];
 
 const FAQ = [
-  { q: "Do I need an API key to try it?", a: "No. Examora ships with a demo AI fallback so everything works offline. Add a free Gemini or OpenAI key in .env for real AI." },
-  { q: "What exam formats are supported?", a: "Numbered questions with A/B/C/D options and an optional 'Answer:' line. Binary PDF extraction is a documented drop-in." },
-  { q: "Is it free?", a: "The MVP is open and self-hostable via Docker. You bring your own free-tier AI key." },
+  { q: "Do I need an API key to try it?", a: "No. Examora works offline with a demo AI fallback. For real AI features, you can add your own API key." },
+  { q: "What exam formats are supported?", a: "Multiple choice questions with A/B/C/D options. Supports both text-based and scanned PDFs with automatic OCR." },
+  { q: "Is it free?", a: "Yes! Examora is open-source and self-hostable. You only need your own API key for AI features." },
+  { q: "Can I use it for competitive exams?", a: "Absolutely! Generate practice tests for JEE, NEET, SAT, GRE, or any exam by describing the topic." },
 ];
 
 export default function Landing() {
@@ -81,22 +82,21 @@ export default function Landing() {
         </div>
       </section>
 
-      <section id="faq" className="mx-auto max-w-3xl px-4 py-16">
-        <h2 className="text-center text-3xl font-bold">FAQ</h2>
-        <div className="mt-8 space-y-3">
+      <section id="faq" className="mx-auto max-w-6xl px-4 py-16">
+        <h2 className="text-center text-3xl font-bold">Frequently Asked Questions</h2>
+        <div className="mt-10 grid gap-6 sm:grid-cols-2">
           {FAQ.map((item) => (
-            <Card key={item.q} className="p-5">
-              <h3 className="font-medium">{item.q}</h3>
-              <p className="mt-1 text-sm text-muted-foreground">{item.a}</p>
+            <Card key={item.q} className="p-6">
+              <h3 className="font-semibold">{item.q}</h3>
+              <p className="mt-2 text-sm text-muted-foreground">{item.a}</p>
             </Card>
           ))}
         </div>
       </section>
 
       <footer className="border-t">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 py-8 text-sm text-muted-foreground sm:flex-row">
-          <span>© {new Date().getFullYear()} Examora. Built with Next.js.</span>
-          <Link href="/dashboard" className="hover:text-foreground">Open the app →</Link>
+        <div className="mx-auto flex max-w-6xl items-center justify-center px-4 py-8 text-sm text-muted-foreground">
+          <span>© {new Date().getFullYear()} Examora. All rights reserved.</span>
         </div>
       </footer>
     </div>
