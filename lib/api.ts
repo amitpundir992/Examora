@@ -31,3 +31,20 @@ export function guard(req: Request, key: string, max = 20): NextResponse | null 
   const { ok: allowed } = limit(`${key}:${ip}`, max);
   return allowed ? null : fail("Rate limit exceeded. Please slow down.", 429);
 }
+
+/** Reject cross-site mutations that could abuse an authenticated session cookie. */
+export function requireSameOrigin(req: Request): NextResponse | null {
+  const origin = req.headers.get("origin");
+  if (!origin) return null;
+
+  const configuredUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXTAUTH_URL;
+  if (!configuredUrl) return fail("Application URL is not configured", 500);
+
+  try {
+    return new URL(origin).origin === new URL(configuredUrl).origin
+      ? null
+      : fail("Invalid request origin", 403);
+  } catch {
+    return fail("Invalid request origin", 403);
+  }
+}

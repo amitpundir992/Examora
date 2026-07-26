@@ -24,6 +24,14 @@ docs
 # misc
 .DS_Store
 *.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+credentials*.json
+service-account*.json
+*.log
 
 # debug
 npm-debug.log*
@@ -31,8 +39,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# Local environment files contain secrets. The empty template is safe to commit.
 .env*
+!.env.example
 
 # vercel
 .vercel

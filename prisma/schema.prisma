@@ -1,8 +1,4 @@
-// Examora production schema. The MVP uses an in-memory repository; this schema
-// is the drop-in for PostgreSQL. See DATABASE.md for migration steps.
-//
-//   npm i -D prisma && npm i @prisma/client
-//   npx prisma migrate dev --name init
+// Examora production PostgreSQL schema.
 
 generator client {
   provider = "prisma-client-js"
@@ -24,27 +20,84 @@ enum ExamSource {
   AI
 }
 
-enum AIRequestKind {
-  EXPLAIN
-  SOLVE
-  GENERATE
+enum Plan {
+  FREE
+  PRO
+}
+
+enum SubscriptionStatus {
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  UNPAID
+  PAUSED
+}
+
+enum UsageMetric {
+  UPLOAD
+  AI_GENERATE
+  AI_EXPLAIN
+  AI_SOLVE
 }
 
 model User {
-  id            String      @id @default(cuid())
-  email         String      @unique
-  emailVerified DateTime?
-  name          String?
-  image         String?
-  role          Role        @default(USER)
-  createdAt     DateTime    @default(now())
-  exams         Exam[]
-  attempts      Attempt[]
-  uploads       Upload[]
-  aiRequests    AIRequest[]
-  sessions      Session[]
-  auditLogs     AuditLog[]
-  accounts      Account[]
+  id               String       @id @default(cuid())
+  email            String       @unique
+  emailVerified    DateTime?
+  name             String?
+  image            String?
+  role             Role         @default(USER)
+  plan             Plan         @default(FREE)
+  stripeCustomerId String?      @unique
+  createdAt        DateTime     @default(now())
+  exams            Exam[]
+  attempts         Attempt[]
+  accounts         Account[]
+  subscription     Subscription?
+  usageRecords     UsageRecord[]
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  userId               String             @unique
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripeSubscriptionId String             @unique
+  stripePriceId        String
+  status               SubscriptionStatus
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  cancelAtPeriodEnd    Boolean            @default(false)
+  canceledAt           DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  @@index([status])
+}
+
+model UsageRecord {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  metric      UsageMetric
+  periodStart DateTime
+  count       Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@unique([userId, metric, periodStart])
+  @@index([userId, periodStart])
+}
+
+model StripeEvent {
+  id          String    @id
+  type        String
+  createdAt   DateTime  @default(now())
+  processedAt DateTime?
+
+  @@index([createdAt])
 }
 
 model Exam {
@@ -104,42 +157,7 @@ model Answer {
   @@index([attemptId])
 }
 
-model Upload {
-  id        String   @id @default(cuid())
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  fileName  String
-  r2Key     String? // object key in Cloudflare R2
-  bytes     Int      @default(0)
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-}
-
-model AIRequest {
-  id        String        @id @default(cuid())
-  userId    String?
-  user      User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-  kind      AIRequestKind
-  provider  String
-  tokens    Int           @default(0)
-  createdAt DateTime      @default(now())
-
-  @@index([userId])
-}
-
-model AuditLog {
-  id        String   @id @default(cuid())
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  action    String
-  meta      Json?
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-}
-
-// NextAuth.js models
+// Auth.js models used by Google OAuth with JWT sessions.
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -158,22 +176,4 @@ model Account {
 
   @@unique([provider, providerAccountId])
   @@index([userId])
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
 }

@@ -1,36 +1,32 @@
-import { PrismaClient, Exam as PrismaExam, Question as PrismaQuestion } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { Exam as PrismaExam, Question as PrismaQuestion } from "@prisma/client";
 import type { AnswerMap, AttemptResult, Exam } from "./types";
-
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL!,
-});
-
-const prisma = new PrismaClient({ adapter });
+import { prisma } from "./prisma";
 
 export const examRepo = {
-  async list(): Promise<Exam[]> {
+  async list(userId: string): Promise<Exam[]> {
     const exams = await prisma.exam.findMany({
+      where: { ownerId: userId },
       include: { questions: { orderBy: { order: "asc" } } },
       orderBy: { createdAt: "desc" },
     });
     return exams.map(formatExam);
   },
 
-  async get(id: string): Promise<Exam | undefined> {
+  async get(id: string, userId: string): Promise<Exam | undefined> {
     const exam = await prisma.exam.findUnique({
-      where: { id },
+      where: { id, ownerId: userId },
       include: { questions: { orderBy: { order: "asc" } } },
     });
     return exam ? formatExam(exam) : undefined;
   },
 
-  async create(data: Omit<Exam, "id" | "createdAt">): Promise<Exam> {
+  async create(data: Omit<Exam, "id" | "createdAt">, userId: string): Promise<Exam> {
     const exam = await prisma.exam.create({
       data: {
         title: data.title,
         description: data.description,
         source: data.source.toUpperCase() as "PDF" | "TEXT" | "AI",
+        ownerId: userId,
         questions: {
           create: data.questions.map((q, i) => ({
             prompt: q.prompt,
@@ -46,10 +42,10 @@ export const examRepo = {
     return formatExam(exam);
   },
 
-  async remove(id: string): Promise<boolean> {
+  async remove(id: string, userId: string): Promise<boolean> {
     try {
-      await prisma.exam.delete({ where: { id } });
-      return true;
+      const result = await prisma.exam.deleteMany({ where: { id, ownerId: userId } });
+      return result.count === 1;
     } catch {
       return false;
     }
@@ -57,16 +53,18 @@ export const examRepo = {
 };
 
 export const attemptRepo = {
-  async list() {
+  async list(userId: string) {
     return prisma.attempt.findMany({
+      where: { userId },
       orderBy: { createdAt: "desc" },
     });
   },
 
-  async create(result: AttemptResult) {
+  async create(result: AttemptResult, userId: string) {
     return prisma.attempt.create({
       data: {
         examId: result.examId,
+        userId,
         total: result.total,
         correct: result.correct,
         wrong: result.wrong,

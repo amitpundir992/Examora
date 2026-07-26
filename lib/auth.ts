@@ -1,31 +1,7 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg";
-
-// Database URL - use a placeholder during build time
-const databaseUrl = process.env.DATABASE_URL || "postgresql://placeholder:placeholder@localhost:5432/placeholder";
-
-// Prisma singleton to prevent multiple instances in development
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-  pool: Pool | undefined;
-};
-
-const pool = globalForPrisma.pool ?? new Pool({ connectionString: databaseUrl });
-const adapter = new PrismaPg(pool);
-
-const prisma = globalForPrisma.prisma ?? new PrismaClient({
-  adapter,
-  log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
-});
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-  globalForPrisma.pool = pool;
-}
+import { prisma } from "@/lib/prisma";
 
 // @ts-expect-error - NextAuth v5 beta type compatibility
 export const { handlers, signIn, signOut, auth } = NextAuth({

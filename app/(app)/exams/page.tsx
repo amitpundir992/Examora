@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { Card, Badge, Button } from "@/components/ui";
 import { examRepo } from "@/lib/repository";
+import { auth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function ExamsPage() {
-  const exams = await examRepo.list();
+  const session = await auth();
+  if (!session?.user?.id) return null;
+  const exams = await examRepo.list(session.user.id);
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex items-center justify-between">

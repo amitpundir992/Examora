@@ -14,7 +14,7 @@ const FEATURES = [
 const FAQ = [
   { q: "Do I need an API key to try it?", a: "No. Examora works offline with a demo AI fallback. For real AI features, you can add your own API key." },
   { q: "What exam formats are supported?", a: "Multiple choice questions with A/B/C/D options. Supports both text-based and scanned PDFs with automatic OCR." },
-  { q: "Is it free?", a: "Yes! Examora is open-source and self-hostable. You only need your own API key for AI features." },
+  { q: "Is it free?", a: "Every account starts on the Free plan. Pro raises monthly import and AI limits for $5 per month or $30 per year." },
   { q: "Can I use it for competitive exams?", a: "Absolutely! Generate practice tests for JEE, NEET, SAT, GRE, or any exam by describing the topic." },
 ];
 
@@ -31,6 +31,7 @@ export default function Landing() {
             <a href="#features" className="hover:text-foreground">Features</a>
             <Link href="/ai-generator" className="hover:text-foreground">AI Exams</Link>
             <Link href="/upload" className="hover:text-foreground">PDF Exams</Link>
+            <a href="#pricing" className="hover:text-foreground">Pricing</a>
             <a href="#faq" className="hover:text-foreground">FAQ</a>
           </div>
           <div className="flex items-center gap-2">
@@ -79,6 +80,33 @@ export default function Landing() {
               <p className="mt-1 text-sm text-muted-foreground">{f.desc}</p>
             </Card>
           ))}
+        </div>
+      </section>
+
+      <section id="pricing" className="border-y bg-card">
+        <div className="mx-auto max-w-5xl px-4 py-16">
+          <h2 className="text-center text-3xl font-bold">Simple pricing</h2>
+          <p className="mt-2 text-center text-muted-foreground">Start free and upgrade when you need more room.</p>
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
+            <Card className="p-6">
+              <h3 className="font-semibold">Free</h3>
+              <p className="mt-3 text-3xl font-bold">$0</p>
+              <p className="mt-4 text-sm text-muted-foreground">3 imports and 2 AI-generated exams each month.</p>
+              <Link href="/login" className="mt-6 block"><Button variant="secondary" className="w-full">Start free</Button></Link>
+            </Card>
+            <Card className="border-primary p-6">
+              <h3 className="font-semibold">Pro Monthly</h3>
+              <p className="mt-3 text-3xl font-bold">$5 <span className="text-sm font-normal text-muted-foreground">/ month</span></p>
+              <p className="mt-4 text-sm text-muted-foreground">Higher limits across imports, generation, explanations, and AI solutions.</p>
+              <Link href="/billing" className="mt-6 block"><Button className="w-full">Choose monthly</Button></Link>
+            </Card>
+            <Card className="p-6">
+              <h3 className="font-semibold">Pro Yearly</h3>
+              <p className="mt-3 text-3xl font-bold">$30 <span className="text-sm font-normal text-muted-foreground">/ year</span></p>
+              <p className="mt-4 text-sm text-muted-foreground">All Pro limits with 50% savings compared with monthly billing.</p>
+              <Link href="/billing" className="mt-6 block"><Button variant="secondary" className="w-full">Choose yearly</Button></Link>
+            </Card>
+          </div>
         </div>
       </section>
 

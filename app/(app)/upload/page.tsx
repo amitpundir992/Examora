@@ -109,10 +109,6 @@ export default function UploadPage() {
         <Button onClick={submit} disabled={loading || !canSubmit}>
           {loading ? <><Spinner /> Processing…</> : file ? "Convert PDF → Exam" : "Parse & Start Exam"}
         </Button>
-        <p className="text-xs text-muted-foreground">
-          Text-based PDFs work out of the box. For best results extracting questions + correct answers from arbitrary
-          PDFs, add a free <code>GEMINI_API_KEY</code> in <code>.env</code>. Scanned/image-only PDFs need OCR (see ROADMAP).
-        </p>
       </Card>
     </div>
     </ProtectedRoute>

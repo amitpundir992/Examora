@@ -2,12 +2,15 @@ import Link from "next/link";
 import { Card, Badge, Button } from "@/components/ui";
 import { examRepo, attemptRepo } from "@/lib/repository";
 import { providerName } from "@/lib/ai/service";
+import { auth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function Dashboard() {
-  const exams = await examRepo.list();
-  const attempts = await attemptRepo.list();
+  const session = await auth();
+  if (!session?.user?.id) return null;
+  const exams = await examRepo.list(session.user.id);
+  const attempts = await attemptRepo.list(session.user.id);
   const avg = attempts.length
     ? Math.round(attempts.reduce((sum, attempt) => sum + attempt.percentage, 0) / attempts.length)
     : 0;
