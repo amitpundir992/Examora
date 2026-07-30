@@ -1,5 +1,5 @@
 import { Exam as PrismaExam, Question as PrismaQuestion } from "@prisma/client";
-import type { AnswerMap, AttemptResult, Exam } from "./types";
+import type { AttemptResult, AttemptReview, AttemptSummary, Exam } from "./types";
 import { prisma } from "./prisma";
 
 export const examRepo = {
@@ -53,11 +53,140 @@ export const examRepo = {
 };
 
 export const attemptRepo = {
-  async list(userId: string) {
-    return prisma.attempt.findMany({
+  async summary(userId: string) {
+    const result = await prisma.attempt.aggregate({
       where: { userId },
-      orderBy: { createdAt: "desc" },
+      _count: { id: true },
+      _avg: { percentage: true },
     });
+    return {
+      total: result._count.id,
+      averagePercentage: Math.round(result._avg.percentage ?? 0),
+    };
+  },
+
+  async listPage(userId: string, page: number, pageSize = 10) {
+    const safePage = Math.max(1, Math.floor(page));
+    const safePageSize = Math.min(50, Math.max(1, Math.floor(pageSize)));
+    const where = { userId };
+    const total = await prisma.attempt.count({ where });
+    const attempts =
+      total === 0
+        ? []
+        : await prisma.attempt.findMany({
+            where,
+            select: {
+              id: true,
+              examId: true,
+              total: true,
+              correct: true,
+              wrong: true,
+              unanswered: true,
+              percentage: true,
+              timeSpentSec: true,
+              createdAt: true,
+              exam: { select: { title: true } },
+            },
+            orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+            skip: (safePage - 1) * safePageSize,
+            take: safePageSize,
+          });
+
+    return {
+      attempts: attempts.map(formatAttemptSummary),
+      total,
+      page: safePage,
+      pageSize: safePageSize,
+      totalPages: Math.max(1, Math.ceil(total / safePageSize)),
+    };
+  },
+
+  async listRecent(userId: string, limit = 3): Promise<AttemptSummary[]> {
+    const safeLimit = Math.min(10, Math.max(1, Math.floor(limit)));
+    const attempts = await prisma.attempt.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        examId: true,
+        total: true,
+        correct: true,
+        wrong: true,
+        unanswered: true,
+        percentage: true,
+        timeSpentSec: true,
+        createdAt: true,
+        exam: { select: { title: true } },
+      },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: safeLimit,
+    });
+    return attempts.map(formatAttemptSummary);
+  },
+
+  async getReview(id: string, userId: string): Promise<AttemptReview | undefined> {
+    const attempt = await prisma.attempt.findFirst({
+      where: { id, userId },
+      select: {
+        id: true,
+        examId: true,
+        total: true,
+        correct: true,
+        wrong: true,
+        unanswered: true,
+        percentage: true,
+        timeSpentSec: true,
+        createdAt: true,
+        answers: {
+          select: {
+            questionId: true,
+            selectedIndex: true,
+            isCorrect: true,
+          },
+        },
+        exam: {
+          select: {
+            title: true,
+            questions: {
+              orderBy: { order: "asc" },
+              select: {
+                id: true,
+                prompt: true,
+                options: true,
+                correctIndex: true,
+                explanation: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!attempt) return undefined;
+
+    const answers = new Map(attempt.answers.map((answer) => [answer.questionId, answer]));
+    return {
+      id: attempt.id,
+      examId: attempt.examId,
+      examTitle: attempt.exam.title,
+      total: attempt.total,
+      correct: attempt.correct,
+      wrong: attempt.wrong,
+      unanswered: attempt.unanswered,
+      percentage: attempt.percentage,
+      timeSpentSec: attempt.timeSpentSec,
+      createdAt: attempt.createdAt.toISOString(),
+      questions: attempt.exam.questions.map((question) => {
+        const answer = answers.get(question.id);
+        return {
+          id: question.id,
+          prompt: question.prompt,
+          options: question.options as string[],
+          correctIndex: question.correctIndex,
+          explanation: question.explanation ?? undefined,
+          selectedIndex: answer?.selectedIndex ?? null,
+          isCorrect: answer?.isCorrect ?? false,
+        };
+      }),
+    };
   },
 
   async create(result: AttemptResult, userId: string) {
@@ -79,9 +208,36 @@ export const attemptRepo = {
           })),
         },
       },
+      select: { id: true },
     });
   },
 };
+
+function formatAttemptSummary(attempt: {
+  id: string;
+  examId: string;
+  exam: { title: string };
+  total: number;
+  correct: number;
+  wrong: number;
+  unanswered: number;
+  percentage: number;
+  timeSpentSec: number;
+  createdAt: Date;
+}): AttemptSummary {
+  return {
+    id: attempt.id,
+    examId: attempt.examId,
+    examTitle: attempt.exam.title,
+    total: attempt.total,
+    correct: attempt.correct,
+    wrong: attempt.wrong,
+    unanswered: attempt.unanswered,
+    percentage: attempt.percentage,
+    timeSpentSec: attempt.timeSpentSec,
+    createdAt: attempt.createdAt.toISOString(),
+  };
+}
 
 function formatExam(exam: PrismaExam & { questions: PrismaQuestion[] }): Exam {
   return {
@@ -97,31 +253,5 @@ function formatExam(exam: PrismaExam & { questions: PrismaQuestion[] }): Exam {
       correctIndex: q.correctIndex,
       explanation: q.explanation ?? undefined,
     })),
-  };
-}
-
-/** Pure scoring function — also unit-testable in isolation. */
-export function gradeAttempt(exam: Exam, answers: AnswerMap, timeSpentSec: number): AttemptResult {
-  const perQuestion = exam.questions.map((q) => {
-    const selectedIndex = q.id in answers ? answers[q.id] : null;
-    return {
-      questionId: q.id,
-      selectedIndex,
-      correctIndex: q.correctIndex,
-      isCorrect: selectedIndex === q.correctIndex,
-    };
-  });
-  const correct = perQuestion.filter((p) => p.isCorrect).length;
-  const answered = perQuestion.filter((p) => p.selectedIndex != null).length;
-  const total = exam.questions.length;
-  return {
-    examId: exam.id,
-    total,
-    correct,
-    wrong: answered - correct,
-    unanswered: total - answered,
-    percentage: total ? Math.round((correct / total) * 100) : 0,
-    timeSpentSec,
-    perQuestion,
   };
 }

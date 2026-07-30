@@ -143,7 +143,7 @@ model Attempt {
   answers      Answer[]
 
   @@index([examId])
-  @@index([userId])
+  @@index([userId, createdAt(sort: Desc)])
 }
 
 model Answer {

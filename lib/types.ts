@@ -39,6 +39,35 @@ export interface AttemptResult {
   }[];
 }
 
+export interface SubmittedAttemptResult extends AttemptResult {
+  attemptId: string;
+}
+
+export interface AttemptSummary {
+  id: string;
+  examId: string;
+  examTitle: string;
+  total: number;
+  correct: number;
+  wrong: number;
+  unanswered: number;
+  percentage: number;
+  timeSpentSec: number;
+  createdAt: string;
+}
+
+export interface AttemptReview extends AttemptSummary {
+  questions: {
+    id: string;
+    prompt: string;
+    options: string[];
+    correctIndex: number;
+    explanation?: string;
+    selectedIndex: number | null;
+    isCorrect: boolean;
+  }[];
+}
+
 // ---- API input schemas ----
 
 export const generateInputSchema = z.object({
@@ -70,5 +99,5 @@ export type SolveInput = z.infer<typeof solveInputSchema>;
 
 export const submitAttemptSchema = z.object({
   answers: z.record(z.string(), z.number().int().min(0)),
-  timeSpentSec: z.number().int().min(0).default(0),
+  timeSpentSec: z.number().int().min(0).max(86_400).default(0),
 });

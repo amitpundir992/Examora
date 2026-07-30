@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import type { AnswerMap, AttemptResult, Exam } from "@/lib/types";
+import type { AnswerMap, Exam, SubmittedAttemptResult } from "@/lib/types";
 import { Button, Card, Badge, Spinner } from "@/components/ui";
 import { cn, letter } from "@/lib/utils";
 
@@ -17,8 +17,9 @@ export function ExamEngine({ exam }: { exam: Exam }) {
   const [answers, setAnswers] = useState<AnswerMap>({});
   const [marked, setMarked] = useState<Set<string>>(new Set());
   const [elapsed, setElapsed] = useState(0);
-  const [result, setResult] = useState<AttemptResult | null>(null);
+  const [result, setResult] = useState<SubmittedAttemptResult | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const q = exam.questions[current];
 
@@ -43,23 +44,48 @@ export function ExamEngine({ exam }: { exam: Exam }) {
   }
 
   async function submit() {
+    if (submitting) return;
     setSubmitting(true);
+    setSubmitError("");
     try {
       const res = await fetch(`/api/exams/${exam.id}/attempts`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ answers, timeSpentSec: elapsed }),
       });
-      setResult(await res.json());
+      const data = (await res.json().catch(() => null)) as
+        | (Partial<SubmittedAttemptResult> & { error?: string })
+        | null;
+      if (!res.ok) throw new Error(data?.error || "Unable to submit this exam.");
+      if (!data || typeof data.attemptId !== "string" || typeof data.percentage !== "number") {
+        throw new Error("The server returned an invalid attempt result.");
+      }
+      setResult(data as SubmittedAttemptResult);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Unable to submit this exam.");
     } finally {
       setSubmitting(false);
     }
   }
 
-  if (result) return <Results exam={exam} result={result} answers={answers} />;
+  function retake() {
+    setCurrent(0);
+    setAnswers({});
+    setMarked(new Set());
+    setElapsed(0);
+    setResult(null);
+    setSubmitError("");
+  }
+
+  if (result) return <Results exam={exam} result={result} answers={answers} onRetake={retake} />;
 
   return (
     <div className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[1fr_220px]">
+      {submitError ? (
+        <p role="alert" className="rounded-md border border-danger px-3 py-2 text-sm text-danger lg:col-span-2">
+          {submitError}
+        </p>
+      ) : null}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold">{exam.title}</h1>
@@ -197,7 +223,17 @@ function AskAi({ question }: { question: Exam["questions"][number] }) {
   );
 }
 
-function Results({ exam, result, answers }: { exam: Exam; result: AttemptResult; answers: AnswerMap }) {
+function Results({
+  exam,
+  result,
+  answers,
+  onRetake,
+}: {
+  exam: Exam;
+  result: SubmittedAttemptResult;
+  answers: AnswerMap;
+  onRetake: () => void;
+}) {
   const stats = [
     { label: "Score", value: `${result.percentage}%` },
     { label: "Correct", value: result.correct },
@@ -249,7 +285,21 @@ function Results({ exam, result, answers }: { exam: Exam; result: AttemptResult;
         })}
       </div>
 
-      <Link href="/exams"><Button variant="secondary">← Back to exams</Button></Link>
+      <div className="flex flex-wrap gap-2">
+        <Link
+          href={`/attempts/${result.attemptId}`}
+          className="inline-flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          View saved review
+        </Link>
+        <Button variant="secondary" onClick={onRetake}>Retake exam</Button>
+        <Link
+          href="/attempts"
+          className="inline-flex h-10 items-center justify-center rounded-lg border px-4 text-sm font-medium hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          Attempt history
+        </Link>
+      </div>
     </div>
   );
 }

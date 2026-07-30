@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { BarChart3, BookOpenCheck, CreditCard, FileUp, LogOut, Menu, Sparkles, X } from "lucide-react";
+import { BarChart3, BookOpenCheck, CreditCard, FileUp, History, LogOut, Menu, Sparkles, X } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Badge } from "@/components/ui";
 import { cn } from "@/lib/utils";
@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: BarChart3 },
   { href: "/exams", label: "Exams", icon: BookOpenCheck },
+  { href: "/attempts", label: "History", icon: History },
   { href: "/upload", label: "Upload PDF", icon: FileUp },
   { href: "/ai-generator", label: "AI Generator", icon: Sparkles },
   { href: "/billing", label: "Billing", icon: CreditCard },

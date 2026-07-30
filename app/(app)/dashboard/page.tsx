@@ -3,23 +3,24 @@ import { Card, Badge, Button } from "@/components/ui";
 import { examRepo, attemptRepo } from "@/lib/repository";
 import { providerName } from "@/lib/ai/service";
 import { auth } from "@/lib/auth";
+import { formatAttemptDate } from "@/lib/attempt-format";
 
 export const dynamic = "force-dynamic";
 
 export default async function Dashboard() {
   const session = await auth();
   if (!session?.user?.id) return null;
-  const exams = await examRepo.list(session.user.id);
-  const attempts = await attemptRepo.list(session.user.id);
-  const avg = attempts.length
-    ? Math.round(attempts.reduce((sum, attempt) => sum + attempt.percentage, 0) / attempts.length)
-    : 0;
+  const [exams, attemptSummary, recentAttempts] = await Promise.all([
+    examRepo.list(session.user.id),
+    attemptRepo.summary(session.user.id),
+    attemptRepo.listRecent(session.user.id, 3),
+  ]);
   const provider = providerName();
 
   const stats = [
     { label: "Total Exams", value: exams.length },
-    { label: "Total Attempts", value: attempts.length },
-    { label: "Average Score", value: `${avg}%` },
+    { label: "Total Attempts", value: attemptSummary.total },
+    { label: "Average Score", value: `${attemptSummary.averagePercentage}%` },
     { label: "AI Provider", value: provider === "mock" ? "Demo" : provider },
   ];
 
@@ -64,6 +65,35 @@ export default async function Dashboard() {
             </Link>
           ))}
           {exams.length === 0 && <p className="text-sm text-muted-foreground">No exams yet.</p>}
+        </div>
+      </div>
+
+      <div>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold">Recent Attempts</h2>
+          {recentAttempts.length > 0 ? (
+            <Link href="/attempts" className="text-sm font-medium text-primary hover:underline">
+              View history
+            </Link>
+          ) : null}
+        </div>
+        <div className="space-y-2">
+          {recentAttempts.map((attempt) => (
+            <Link key={attempt.id} href={`/attempts/${attempt.id}`}>
+              <Card className="flex items-center justify-between gap-4 p-4 hover:border-primary">
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{attempt.examTitle}</p>
+                  <time dateTime={attempt.createdAt} className="text-xs text-muted-foreground">
+                    {formatAttemptDate(attempt.createdAt)}
+                  </time>
+                </div>
+                <Badge>{attempt.percentage}%</Badge>
+              </Card>
+            </Link>
+          ))}
+          {recentAttempts.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Complete an exam to begin tracking your results.</p>
+          ) : null}
         </div>
       </div>
     </div>
