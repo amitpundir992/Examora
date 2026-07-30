@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button, Card, Badge } from "@/components/ui";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LandingMobileNav } from "@/components/landing-mobile-nav";
 
 const FEATURES = [
   { icon: "📄", title: "PDF Extraction", desc: "Paste or import exam text and we parse questions, options, and answers automatically." },
@@ -21,8 +22,8 @@ const FAQ = [
 export default function Landing() {
   return (
     <div className="bg-grid">
-      <nav className="glass sticky top-0 z-10 border-b">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+      <nav className="glass sticky top-0 z-50 border-b">
+        <div className="relative mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Link href="/" className="flex items-center gap-2 font-semibold">
             <span className="grid h-7 w-7 place-items-center rounded-md bg-primary text-primary-foreground">E</span>
             Examora
@@ -36,7 +37,8 @@ export default function Landing() {
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Link href="/dashboard"><Button size="sm">Get Started</Button></Link>
+            <Link href="/dashboard" className="hidden sm:block"><Button size="sm">Get Started</Button></Link>
+            <LandingMobileNav />
           </div>
         </div>
       </nav>
