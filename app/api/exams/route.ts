@@ -12,7 +12,9 @@ export async function GET() {
   return ok(await examRepo.list(user.id));
 }
 
-const createSchema = examSchema.omit({ id: true, createdAt: true });
+const createSchema = examSchema
+  .omit({ id: true, createdAt: true, topic: true })
+  .extend({ topic: z.string().trim().min(1).max(200).optional() });
 
 export async function POST(req: Request) {
   const { error, user } = await requireAuth();

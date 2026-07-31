@@ -22,6 +22,7 @@ export async function POST(req: Request) {
       return examRepo.create(
         {
           title: generated.title,
+          topic: parsed.data.topic,
           description: `AI-generated - ${parsed.data.difficulty} - ${generated.questions.length} questions`,
           source: "ai",
           questions: generated.questions,

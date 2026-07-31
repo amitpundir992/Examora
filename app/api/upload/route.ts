@@ -87,6 +87,7 @@ export async function POST(req: Request) {
         const exam = await examRepo.create(
           {
             title,
+            topic: title,
             description: `Imported from PDF - ${questions.length} questions`,
             source: "pdf",
             questions,
@@ -116,6 +117,7 @@ export async function POST(req: Request) {
       const exam = await examRepo.create(
         {
           title: parsed.data.title,
+          topic: parsed.data.title,
           description: `Imported from ${parsed.data.source} - ${questions.length} questions`,
           source: parsed.data.source,
           questions,

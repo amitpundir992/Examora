@@ -1,5 +1,5 @@
 import { Exam as PrismaExam, Question as PrismaQuestion } from "@prisma/client";
-import type { AttemptResult, AttemptReview, AttemptSummary, Exam } from "./types";
+import type { AttemptResult, AttemptReview, AttemptSummary, Exam, ExamCreateInput } from "./types";
 import { prisma } from "./prisma";
 
 export const examRepo = {
@@ -20,10 +20,12 @@ export const examRepo = {
     return exam ? formatExam(exam) : undefined;
   },
 
-  async create(data: Omit<Exam, "id" | "createdAt">, userId: string): Promise<Exam> {
+  async create(data: ExamCreateInput, userId: string): Promise<Exam> {
+    const topic = (data.topic?.trim() || data.title.trim() || "General").slice(0, 200);
     const exam = await prisma.exam.create({
       data: {
         title: data.title,
+        topic,
         description: data.description,
         source: data.source.toUpperCase() as "PDF" | "TEXT" | "AI",
         ownerId: userId,
@@ -53,18 +55,6 @@ export const examRepo = {
 };
 
 export const attemptRepo = {
-  async summary(userId: string) {
-    const result = await prisma.attempt.aggregate({
-      where: { userId },
-      _count: { id: true },
-      _avg: { percentage: true },
-    });
-    return {
-      total: result._count.id,
-      averagePercentage: Math.round(result._avg.percentage ?? 0),
-    };
-  },
-
   async listPage(userId: string, page: number, pageSize = 10) {
     const safePage = Math.max(1, Math.floor(page));
     const safePageSize = Math.min(50, Math.max(1, Math.floor(pageSize)));
@@ -99,28 +89,6 @@ export const attemptRepo = {
       pageSize: safePageSize,
       totalPages: Math.max(1, Math.ceil(total / safePageSize)),
     };
-  },
-
-  async listRecent(userId: string, limit = 3): Promise<AttemptSummary[]> {
-    const safeLimit = Math.min(10, Math.max(1, Math.floor(limit)));
-    const attempts = await prisma.attempt.findMany({
-      where: { userId },
-      select: {
-        id: true,
-        examId: true,
-        total: true,
-        correct: true,
-        wrong: true,
-        unanswered: true,
-        percentage: true,
-        timeSpentSec: true,
-        createdAt: true,
-        exam: { select: { title: true } },
-      },
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      take: safeLimit,
-    });
-    return attempts.map(formatAttemptSummary);
   },
 
   async getReview(id: string, userId: string): Promise<AttemptReview | undefined> {
@@ -243,6 +211,7 @@ function formatExam(exam: PrismaExam & { questions: PrismaQuestion[] }): Exam {
   return {
     id: exam.id,
     title: exam.title,
+    topic: exam.topic,
     description: exam.description,
     source: exam.source.toLowerCase() as "pdf" | "text" | "ai",
     createdAt: exam.createdAt.toISOString(),

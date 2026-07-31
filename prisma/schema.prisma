@@ -103,6 +103,7 @@ model StripeEvent {
 model Exam {
   id          String     @id @default(cuid())
   title       String
+  topic       String     @default("General")
   description String     @default("")
   source      ExamSource @default(TEXT)
   createdAt   DateTime   @default(now())

@@ -11,6 +11,7 @@ export const questionSchema = z.object({
 export const examSchema = z.object({
   id: z.string(),
   title: z.string().min(1),
+  topic: z.string().min(1).max(200),
   description: z.string().default(""),
   source: z.enum(["pdf", "text", "ai"]),
   createdAt: z.string(),
@@ -19,6 +20,7 @@ export const examSchema = z.object({
 
 export type Question = z.infer<typeof questionSchema>;
 export type Exam = z.infer<typeof examSchema>;
+export type ExamCreateInput = Omit<Exam, "id" | "createdAt" | "topic"> & { topic?: string };
 
 /** A user's selected option index per question id. */
 export type AnswerMap = Record<string, number>;
