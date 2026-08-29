@@ -18,10 +18,8 @@ const themeScript = `(function(){try{var t=localStorage.getItem('theme');var d=t
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`} suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-      </head>
       <body className="min-h-dvh font-sans antialiased">
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <SessionProvider>{children}</SessionProvider>
       </body>
     </html>
