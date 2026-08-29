@@ -1,11 +1,15 @@
-import { Exam as PrismaExam, Question as PrismaQuestion } from "@prisma/client";
-import type { AttemptResult, AttemptReview, AttemptSummary, Exam, ExamCreateInput } from "./types";
+import { Exam as PrismaExam, Question as PrismaQuestion, Folder as PrismaFolder } from "@prisma/client";
+import type { AttemptResult, AttemptReview, AttemptSummary, Exam, ExamCreateInput, Folder, FolderWithExamCount, FolderCreateInput, FolderUpdateInput } from "./types";
 import { prisma } from "./prisma";
 
 export const examRepo = {
-  async list(userId: string): Promise<Exam[]> {
+  async list(userId: string, folderId?: string | null): Promise<Exam[]> {
+    const where = folderId === undefined 
+      ? { ownerId: userId }
+      : { ownerId: userId, folderId: folderId };
+    
     const exams = await prisma.exam.findMany({
-      where: { ownerId: userId },
+      where,
       include: { questions: { orderBy: { order: "asc" } } },
       orderBy: { createdAt: "desc" },
     });
@@ -42,6 +46,18 @@ export const examRepo = {
       include: { questions: { orderBy: { order: "asc" } } },
     });
     return formatExam(exam);
+  },
+
+  async move(id: string, userId: string, folderId: string | null): Promise<boolean> {
+    try {
+      const result = await prisma.exam.updateMany({
+        where: { id, ownerId: userId },
+        data: { folderId },
+      });
+      return result.count === 1;
+    } catch {
+      return false;
+    }
   },
 
   async remove(id: string, userId: string): Promise<boolean> {
@@ -214,6 +230,7 @@ function formatExam(exam: PrismaExam & { questions: PrismaQuestion[] }): Exam {
     topic: exam.topic,
     description: exam.description,
     source: exam.source.toLowerCase() as "pdf" | "text" | "ai",
+    folderId: exam.folderId,
     createdAt: exam.createdAt.toISOString(),
     questions: exam.questions.map((q) => ({
       id: q.id,
@@ -224,3 +241,82 @@ function formatExam(exam: PrismaExam & { questions: PrismaQuestion[] }): Exam {
     })),
   };
 }
+
+// ---- Folder repository ----
+
+function formatFolder(folder: PrismaFolder & { _count?: { exams: number } }): FolderWithExamCount {
+  return {
+    id: folder.id,
+    name: folder.name,
+    color: folder.color,
+    ownerId: folder.ownerId,
+    createdAt: folder.createdAt.toISOString(),
+    updatedAt: folder.updatedAt.toISOString(),
+    examCount: folder._count?.exams ?? 0,
+  };
+}
+
+export const folderRepo = {
+  async list(userId: string): Promise<FolderWithExamCount[]> {
+    const folders = await prisma.folder.findMany({
+      where: { ownerId: userId },
+      include: { _count: { select: { exams: true } } },
+      orderBy: { createdAt: "asc" },
+    });
+    return folders.map(formatFolder);
+  },
+
+  async get(id: string, userId: string): Promise<FolderWithExamCount | undefined> {
+    const folder = await prisma.folder.findUnique({
+      where: { id, ownerId: userId },
+      include: { _count: { select: { exams: true } } },
+    });
+    return folder ? formatFolder(folder) : undefined;
+  },
+
+  async create(data: FolderCreateInput, userId: string): Promise<Folder> {
+    const count = await prisma.folder.count({ where: { ownerId: userId } });
+    const name = data.name?.trim() || `Folder${String(count + 1).padStart(2, "0")}`;
+    const folder = await prisma.folder.create({
+      data: {
+        name,
+        color: data.color,
+        ownerId: userId,
+      },
+    });
+    return {
+      id: folder.id,
+      name: folder.name,
+      color: folder.color,
+      ownerId: folder.ownerId,
+      createdAt: folder.createdAt.toISOString(),
+      updatedAt: folder.updatedAt.toISOString(),
+    };
+  },
+
+  async update(id: string, userId: string, data: FolderUpdateInput): Promise<boolean> {
+    try {
+      await prisma.folder.updateMany({
+        where: { id, ownerId: userId },
+        data: {
+          ...(data.name && { name: data.name }),
+          ...(data.color && { color: data.color }),
+        },
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
+  async remove(id: string, userId: string): Promise<boolean> {
+    try {
+      const result = await prisma.folder.deleteMany({
+        where: { id, ownerId: userId },
+      });
+      return result.count === 1;
+    } catch {
+      return false;
+    }
+  },
+};

@@ -14,6 +14,7 @@ export const examSchema = z.object({
   topic: z.string().min(1).max(200),
   description: z.string().default(""),
   source: z.enum(["pdf", "text", "ai"]),
+  folderId: z.string().nullable().optional(),
   createdAt: z.string(),
   questions: z.array(questionSchema).min(1),
 });
@@ -103,3 +104,40 @@ export const submitAttemptSchema = z.object({
   answers: z.record(z.string(), z.number().int().min(0)),
   timeSpentSec: z.number().int().min(0).max(86_400).default(0),
 });
+
+// ---- Folder types ----
+
+export const folderSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1).max(100),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+  ownerId: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export type Folder = z.infer<typeof folderSchema>;
+
+export const folderCreateInputSchema = z.object({
+  name: z.string().trim().min(1).max(100).optional(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).default("#6366f1"),
+});
+
+export type FolderCreateInput = z.infer<typeof folderCreateInputSchema>;
+
+export const folderUpdateInputSchema = z.object({
+  name: z.string().trim().min(1).max(100).optional(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+});
+
+export type FolderUpdateInput = z.infer<typeof folderUpdateInputSchema>;
+
+export const moveExamInputSchema = z.object({
+  folderId: z.string().nullable(),
+});
+
+export type MoveExamInput = z.infer<typeof moveExamInputSchema>;
+
+export interface FolderWithExamCount extends Folder {
+  examCount: number;
+}

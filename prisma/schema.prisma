@@ -53,6 +53,7 @@ model User {
   plan             Plan         @default(FREE)
   stripeCustomerId String?      @unique
   createdAt        DateTime     @default(now())
+  folders          Folder[]
   exams            Exam[]
   attempts         Attempt[]
   accounts         Account[]
@@ -100,12 +101,27 @@ model StripeEvent {
   @@index([createdAt])
 }
 
+model Folder {
+  id        String   @id @default(cuid())
+  name      String
+  color     String   @default("#6366f1")
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  exams     Exam[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+}
+
 model Exam {
   id          String     @id @default(cuid())
   title       String
   topic       String     @default("General")
   description String     @default("")
   source      ExamSource @default(TEXT)
+  folderId    String?
+  folder      Folder?    @relation(fields: [folderId], references: [id], onDelete: SetNull)
   createdAt   DateTime   @default(now())
   ownerId     String?
   owner       User?      @relation(fields: [ownerId], references: [id], onDelete: SetNull)
@@ -113,6 +129,7 @@ model Exam {
   attempts    Attempt[]
 
   @@index([ownerId])
+  @@index([folderId])
 }
 
 model Question {
