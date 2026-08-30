@@ -6,6 +6,7 @@ import {
   FolderOpen,
   File,
   X,
+  ChevronRight,
 } from "lucide-react";
 import type { Exam, FolderWithExamCount } from "@/lib/types";
 import { Button, Card, Input, Spinner, Badge } from "@/components/ui";
@@ -81,7 +82,7 @@ export function CreateFolderDialog({ onClose, onSubmit, loading }: CreateFolderD
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Folder name (leave empty for default)"
+          placeholder="Folder name"
           onKeyDown={(e) => {
             if (e.key === "Enter" && !loading) onSubmit(name);
             if (e.key === "Escape") onClose();
@@ -219,9 +220,14 @@ export function FolderItem({
 }: FolderItemProps) {
   const FolderIcon = expanded ? FolderOpen : Folder;
 
+  const handleClick = () => {
+    onClick();
+    onToggle();
+  };
+
   return (
     <div
-      onClick={onClick}
+      onClick={handleClick}
       onContextMenu={onContextMenu}
       onDragOver={onDragOver}
       onDrop={onDrop}
@@ -231,15 +237,13 @@ export function FolderItem({
         isDragOver && "bg-primary/20 ring-2 ring-primary"
       )}
     >
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggle();
-        }}
-        className="shrink-0"
-      >
-        <FolderIcon className="h-5 w-5" style={{ color: folder.color }} />
-      </button>
+      <ChevronRight 
+        className={cn(
+          "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+          expanded && "rotate-90"
+        )} 
+      />
+      <FolderIcon className="h-5 w-5 shrink-0" style={{ color: folder.color }} />
       <span className="flex-1 truncate font-medium">{folder.name}</span>
       <Badge className="text-xs">{folder.examCount}</Badge>
     </div>
