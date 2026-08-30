@@ -60,6 +60,18 @@ export const examRepo = {
     }
   },
 
+  async updateTitle(id: string, userId: string, title: string): Promise<boolean> {
+    try {
+      const result = await prisma.exam.updateMany({
+        where: { id, ownerId: userId },
+        data: { title },
+      });
+      return result.count === 1;
+    } catch {
+      return false;
+    }
+  },
+
   async remove(id: string, userId: string): Promise<boolean> {
     try {
       const result = await prisma.exam.deleteMany({ where: { id, ownerId: userId } });
