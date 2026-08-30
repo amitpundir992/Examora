@@ -7,6 +7,8 @@ import {
   File,
   X,
   ChevronRight,
+  Edit2,
+  Trash2,
 } from "lucide-react";
 import type { Exam, FolderWithExamCount } from "@/lib/types";
 import { Button, Card, Input, Spinner, Badge } from "@/components/ui";
@@ -207,6 +209,8 @@ interface FolderItemProps {
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent) => void;
   isDragOver: boolean;
+  onRename: () => void;
+  onDelete: () => void;
 }
 
 export function FolderItem({
@@ -219,6 +223,8 @@ export function FolderItem({
   onDragOver,
   onDrop,
   isDragOver,
+  onRename,
+  onDelete,
 }: FolderItemProps) {
   const FolderIcon = expanded ? FolderOpen : Folder;
 
@@ -234,7 +240,7 @@ export function FolderItem({
       onDragOver={onDragOver}
       onDrop={onDrop}
       className={cn(
-        "flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 transition-colors",
+        "group flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 transition-colors relative",
         selected ? "bg-primary/10 text-primary" : "hover:bg-muted",
         isDragOver && "bg-primary/20 ring-2 ring-primary"
       )}
@@ -248,6 +254,42 @@ export function FolderItem({
       <FolderIcon className="h-5 w-5 shrink-0" style={{ color: folder.color }} />
       <span className="flex-1 truncate font-medium">{folder.name}</span>
       <Badge className="text-xs">{folder.examCount}</Badge>
+      
+      {/* Action buttons - always visible */}
+      <div 
+        className="flex items-center gap-1 ml-2"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onRename();
+          }}
+          className="p-1.5 rounded text-muted-foreground hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+          title="Rename folder"
+        >
+          <Edit2 className="h-4 w-4" />
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          disabled={folder.examCount > 0}
+          className={cn(
+            "p-1.5 rounded transition-colors",
+            folder.examCount > 0
+              ? "text-muted-foreground/30 cursor-not-allowed"
+              : "text-muted-foreground hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400"
+          )}
+          title={folder.examCount > 0 
+            ? `Cannot delete folder with ${folder.examCount} exam${folder.examCount !== 1 ? 's' : ''}`
+            : "Delete folder"
+          }
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
     </div>
   );
 }
@@ -259,9 +301,11 @@ interface ExamItemProps {
   onClick: () => void;
   onContextMenu: (e: React.MouseEvent) => void;
   onDragStart: (e: React.DragEvent) => void;
+  onRename: () => void;
+  onDelete: () => void;
 }
 
-export function ExamItem({ exam, selected, onClick, onContextMenu, onDragStart }: ExamItemProps) {
+export function ExamItem({ exam, selected, onClick, onContextMenu, onDragStart, onRename, onDelete }: ExamItemProps) {
   return (
     <div
       draggable
@@ -269,7 +313,7 @@ export function ExamItem({ exam, selected, onClick, onContextMenu, onDragStart }
       onClick={onClick}
       onContextMenu={onContextMenu}
       className={cn(
-        "flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-colors",
+        "group flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-colors",
         selected ? "bg-primary/10" : "hover:bg-muted"
       )}
     >
@@ -281,6 +325,34 @@ export function ExamItem({ exam, selected, onClick, onContextMenu, onDragStart }
         </p>
       </div>
       <Badge>{exam.source}</Badge>
+
+      {/* Action buttons - always visible */}
+      <div 
+        className="flex items-center gap-1 ml-2"
+        onClick={(e) => e.stopPropagation()}
+        onDragStart={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onRename();
+          }}
+          className="p-1.5 rounded text-muted-foreground hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+          title="Rename exam"
+        >
+          <Edit2 className="h-4 w-4" />
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          className="p-1.5 rounded text-muted-foreground hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+          title="Delete exam"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
     </div>
   );
 }

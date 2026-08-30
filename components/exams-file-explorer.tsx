@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -21,6 +21,7 @@ import {
   FolderItem,
   ExamItem,
 } from "@/components/folder-components";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 interface ExamsFileExplorerProps {
   folders: FolderWithExamCount[];
@@ -40,42 +41,20 @@ export function ExamsFileExplorer({ folders: initialFolders, exams: initialExams
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [renameDialog, setRenameDialog] = useState<{ type: "exam" | "folder"; id: string; name: string } | null>(null);
   const [propertiesDialog, setPropertiesDialog] = useState<FolderWithExamCount | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    variant?: "danger" | "warning" | "info" | "success";
+  }>({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
 
   const rootExams = useMemo(() => initialExams.filter((e) => !e.folderId), [initialExams]);
-
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!selectedItem) return;
-      
-      // Ignore if user is typing in an input
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-
-      if (e.key === "Delete") {
-        e.preventDefault();
-        if (selectedItem.type === "folder") {
-          const folder = initialFolders.find(f => f.id === selectedItem.id);
-          if (folder && folder.examCount === 0) {
-            handleDelete("folder", selectedItem.id);
-          }
-        } else {
-          handleDelete("exam", selectedItem.id);
-        }
-      } else if (e.key === "F2") {
-        e.preventDefault();
-        if (selectedItem.type === "folder") {
-          const folder = initialFolders.find(f => f.id === selectedItem.id);
-          if (folder) setRenameDialog({ type: "folder", id: folder.id, name: folder.name });
-        } else {
-          const exam = initialExams.find(e => e.id === selectedItem.id);
-          if (exam) setRenameDialog({ type: "exam", id: exam.id, name: exam.title });
-        }
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedItem, initialFolders, initialExams]);
 
   const toggleFolder = (id: string) => {
     setExpandedFolders((prev) => {
@@ -125,7 +104,7 @@ export function ExamsFileExplorer({ folders: initialFolders, exams: initialExams
     }
   };
 
-  const handleDelete = async (type: "exam" | "folder", id: string) => {
+  const handleDelete = useCallback(async (type: "exam" | "folder", id: string) => {
     const item = type === "folder" 
       ? initialFolders.find(f => f.id === id)
       : initialExams.find(e => e.id === id);
@@ -133,29 +112,71 @@ export function ExamsFileExplorer({ folders: initialFolders, exams: initialExams
     if (!item) return;
 
     const itemName = type === "folder" ? (item as FolderWithExamCount).name : (item as Exam).title;
+    const title = type === "folder" ? "Delete Folder?" : "Delete Exam?";
     const message = type === "folder"
-      ? `Delete folder "${itemName}"?\n\nThis action cannot be undone.`
-      : `Delete exam "${itemName}"?\n\nThis will permanently remove the exam and all associated attempts. This action cannot be undone.`;
+      ? `Are you sure you want to delete "${itemName}"?\n\nThis action cannot be undone.`
+      : `Are you sure you want to delete "${itemName}"?\n\nThis will permanently remove the exam and all associated attempts.\nThis action cannot be undone.`;
 
-    if (!confirm(message)) return;
-    
-    setLoading(true);
-    try {
-      const endpoint = type === "folder" ? `/api/folders?id=${id}` : `/api/exams/${id}`;
-      const res = await fetch(endpoint, { method: "DELETE" });
-      if (res.ok) {
-        router.refresh();
-      } else {
-        const error = await res.text();
-        alert(`Failed to delete ${type}: ${error}`);
+    setConfirmDialog({
+      open: true,
+      title,
+      message,
+      variant: "danger",
+      onConfirm: async () => {
+        setLoading(true);
+        try {
+          const endpoint = type === "folder" ? `/api/folders?id=${id}` : `/api/exams/${id}`;
+          const res = await fetch(endpoint, { method: "DELETE" });
+          if (res.ok) {
+            router.refresh();
+            setConfirmDialog(prev => ({ ...prev, open: false }));
+          } else {
+            const error = await res.text();
+            alert(`Failed to delete ${type}: ${error}`);
+          }
+        } catch (err) {
+          console.error("Failed to delete:", err);
+          alert(`Failed to delete ${type}. Please try again.`);
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
+  }, [initialFolders, initialExams, router]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!selectedItem) return;
+      
+      // Ignore if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      if (e.key === "Delete") {
+        e.preventDefault();
+        if (selectedItem.type === "folder") {
+          const folder = initialFolders.find(f => f.id === selectedItem.id);
+          if (folder && folder.examCount === 0) {
+            handleDelete("folder", selectedItem.id);
+          }
+        } else {
+          handleDelete("exam", selectedItem.id);
+        }
+      } else if (e.key === "F2") {
+        e.preventDefault();
+        if (selectedItem.type === "folder") {
+          const folder = initialFolders.find(f => f.id === selectedItem.id);
+          if (folder) setRenameDialog({ type: "folder", id: folder.id, name: folder.name });
+        } else {
+          const exam = initialExams.find(e => e.id === selectedItem.id);
+          if (exam) setRenameDialog({ type: "exam", id: exam.id, name: exam.title });
+        }
       }
-    } catch (err) {
-      console.error("Failed to delete:", err);
-      alert(`Failed to delete ${type}. Please try again.`);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedItem, initialFolders, initialExams, handleDelete]);
 
   const handleMoveExam = async (examId: string, folderId: string | null) => {
     try {
@@ -316,6 +337,8 @@ export function ExamsFileExplorer({ folders: initialFolders, exams: initialExams
                 onDragOver={(e) => handleDragOver(e, folder.id)}
                 onDrop={(e) => handleDrop(e, folder.id)}
                 isDragOver={dragOverFolder === folder.id}
+                onRename={() => setRenameDialog({ type: "folder", id: folder.id, name: folder.name })}
+                onDelete={() => handleDelete("folder", folder.id)}
               />
 
               {/* Exams in Folder */}
@@ -329,6 +352,8 @@ export function ExamsFileExplorer({ folders: initialFolders, exams: initialExams
                       onClick={() => setSelectedItem({ type: "exam", id: exam.id })}
                       onContextMenu={(e) => handleContextMenu(e, "exam", exam.id)}
                       onDragStart={(e) => handleDragStart(e, exam.id)}
+                      onRename={() => setRenameDialog({ type: "exam", id: exam.id, name: exam.title })}
+                      onDelete={() => handleDelete("exam", exam.id)}
                     />
                   ))}
                   {folderExams.length === 0 && (
@@ -357,6 +382,8 @@ export function ExamsFileExplorer({ folders: initialFolders, exams: initialExams
                   onClick={() => setSelectedItem({ type: "exam", id: exam.id })}
                   onContextMenu={(e) => handleContextMenu(e, "exam", exam.id)}
                   onDragStart={(e) => handleDragStart(e, exam.id)}
+                  onRename={() => setRenameDialog({ type: "exam", id: exam.id, name: exam.title })}
+                  onDelete={() => handleDelete("exam", exam.id)}
                 />
               ))}
             </div>
@@ -403,6 +430,19 @@ export function ExamsFileExplorer({ folders: initialFolders, exams: initialExams
       {propertiesDialog && (
         <PropertiesDialog folder={propertiesDialog} onClose={() => setPropertiesDialog(null)} />
       )}
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onClose={() => setConfirmDialog({ ...confirmDialog, open: false })}
+        onConfirm={confirmDialog.onConfirm}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        variant={confirmDialog.variant}
+        confirmText="Delete"
+        cancelText="Cancel"
+        loading={loading}
+      />
     </div>
   );
 }
