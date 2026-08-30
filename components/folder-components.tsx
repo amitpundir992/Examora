@@ -23,6 +23,7 @@ interface ContextMenuProps {
     onClick: () => void;
     danger?: boolean;
     disabled?: boolean;
+    tooltip?: string;
   }>;
 }
 
@@ -44,15 +45,16 @@ export function ContextMenu({ x, y, onClose, items }: ContextMenuProps) {
               }
             }}
             disabled={item.disabled}
+            title={item.tooltip}
             className={cn(
               "flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
               item.danger
-                ? "hover:bg-danger/10 hover:text-danger"
-                : "hover:bg-muted"
+                ? "hover:bg-danger/10 hover:text-danger disabled:hover:bg-transparent disabled:hover:text-current"
+                : "hover:bg-muted disabled:hover:bg-transparent"
             )}
           >
             {item.icon}
-            {item.label}
+            <span className="flex-1 text-left">{item.label}</span>
           </button>
         ))}
       </div>

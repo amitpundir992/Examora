@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -42,6 +42,40 @@ export function ExamsFileExplorer({ folders: initialFolders, exams: initialExams
   const [propertiesDialog, setPropertiesDialog] = useState<FolderWithExamCount | null>(null);
 
   const rootExams = useMemo(() => initialExams.filter((e) => !e.folderId), [initialExams]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!selectedItem) return;
+      
+      // Ignore if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      if (e.key === "Delete") {
+        e.preventDefault();
+        if (selectedItem.type === "folder") {
+          const folder = initialFolders.find(f => f.id === selectedItem.id);
+          if (folder && folder.examCount === 0) {
+            handleDelete("folder", selectedItem.id);
+          }
+        } else {
+          handleDelete("exam", selectedItem.id);
+        }
+      } else if (e.key === "F2") {
+        e.preventDefault();
+        if (selectedItem.type === "folder") {
+          const folder = initialFolders.find(f => f.id === selectedItem.id);
+          if (folder) setRenameDialog({ type: "folder", id: folder.id, name: folder.name });
+        } else {
+          const exam = initialExams.find(e => e.id === selectedItem.id);
+          if (exam) setRenameDialog({ type: "exam", id: exam.id, name: exam.title });
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedItem, initialFolders, initialExams]);
 
   const toggleFolder = (id: string) => {
     setExpandedFolders((prev) => {
@@ -92,16 +126,32 @@ export function ExamsFileExplorer({ folders: initialFolders, exams: initialExams
   };
 
   const handleDelete = async (type: "exam" | "folder", id: string) => {
-    if (!confirm(`Delete this ${type}? This cannot be undone.`)) return;
+    const item = type === "folder" 
+      ? initialFolders.find(f => f.id === id)
+      : initialExams.find(e => e.id === id);
+    
+    if (!item) return;
+
+    const itemName = type === "folder" ? (item as FolderWithExamCount).name : (item as Exam).title;
+    const message = type === "folder"
+      ? `Delete folder "${itemName}"?\n\nThis action cannot be undone.`
+      : `Delete exam "${itemName}"?\n\nThis will permanently remove the exam and all associated attempts. This action cannot be undone.`;
+
+    if (!confirm(message)) return;
+    
     setLoading(true);
     try {
       const endpoint = type === "folder" ? `/api/folders?id=${id}` : `/api/exams/${id}`;
       const res = await fetch(endpoint, { method: "DELETE" });
       if (res.ok) {
         router.refresh();
+      } else {
+        const error = await res.text();
+        alert(`Failed to delete ${type}: ${error}`);
       }
     } catch (err) {
       console.error("Failed to delete:", err);
+      alert(`Failed to delete ${type}. Please try again.`);
     } finally {
       setLoading(false);
     }
@@ -178,11 +228,12 @@ export function ExamsFileExplorer({ folders: initialFolders, exams: initialExams
           onClick: () => setPropertiesDialog(folder),
         },
         {
-          label: "Delete",
+          label: folder.examCount > 0 ? `Delete (${folder.examCount} exam${folder.examCount !== 1 ? 's' : ''} inside)` : "Delete",
           icon: <Trash2 className="h-4 w-4" />,
           onClick: () => handleDelete("folder", folder.id),
           danger: true,
           disabled: folder.examCount > 0,
+          tooltip: folder.examCount > 0 ? "Cannot delete folder with exams. Move or delete exams first." : undefined,
         },
       ];
     }
