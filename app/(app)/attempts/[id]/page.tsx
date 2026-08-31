@@ -6,6 +6,7 @@ import { formatAttemptDate, formatDuration } from "@/lib/attempt-format";
 import { attemptRepo } from "@/lib/repository";
 import { Badge, Card } from "@/components/ui";
 import { cn, letter } from "@/lib/utils";
+import { ExportPdfButton } from "@/components/export-pdf-button";
 
 export const dynamic = "force-dynamic";
 
@@ -57,13 +58,16 @@ export default async function AttemptReviewPage({ params }: { params: Promise<{ 
             </span>
           </div>
         </div>
-        <Link
-          href={`/exams/${attempt.examId}`}
-          className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <RotateCcw className="h-4 w-4" aria-hidden="true" />
-          Retake exam
-        </Link>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <ExportPdfButton attempt={attempt} />
+          <Link
+            href={`/exams/${attempt.examId}`}
+            className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <RotateCcw className="h-4 w-4" aria-hidden="true" />
+            Retake exam
+          </Link>
+        </div>
       </div>
 
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
