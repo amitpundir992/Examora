@@ -25,7 +25,7 @@ export const PLAN_LIMITS: Record<
 export const PLAN_PRICES = {
   monthly: {
     label: "Monthly",
-    amount: "$5",
+    amount: "$3",
     cadence: "month",
     priceId: () => process.env.STRIPE_PRICE_PRO_MONTHLY,
   },

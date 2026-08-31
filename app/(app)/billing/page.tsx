@@ -92,7 +92,7 @@ export default async function BillingPage({
                 <h3 className="font-semibold">Pro Monthly</h3>
                 <Crown className="h-5 w-5 text-primary" />
               </div>
-              <p className="mt-3 text-3xl font-bold">$5 <span className="text-sm font-normal text-muted-foreground">/ month</span></p>
+              <p className="mt-3 text-3xl font-bold">$3 <span className="text-sm font-normal text-muted-foreground">/ month</span></p>
               <PlanFeatures />
               <CheckoutButton interval="monthly">Upgrade monthly</CheckoutButton>
             </Card>

@@ -15,7 +15,7 @@ const FEATURES = [
 const FAQ = [
   { q: "Do I need an API key to try it?", a: "No. Examora works offline with a demo AI fallback. For real AI features, you can add your own API key." },
   { q: "What exam formats are supported?", a: "Multiple choice questions with A/B/C/D options. Supports both text-based and scanned PDFs with automatic OCR." },
-  { q: "Is it free?", a: "Every account starts on the Free plan. Pro raises monthly import and AI limits for $5 per month or $30 per year." },
+  { q: "Is it free?", a: "Every account starts on the Free plan. Pro raises monthly import and AI limits for $3 per month or $30 per year." },
   { q: "Can I use it for competitive exams?", a: "Absolutely! Generate practice tests for JEE, NEET, SAT, GRE, or any exam by describing the topic." },
 ];
 
@@ -98,7 +98,7 @@ export default function Landing() {
             </Card>
             <Card className="border-primary p-6">
               <h3 className="font-semibold">Pro Monthly</h3>
-              <p className="mt-3 text-3xl font-bold">$5 <span className="text-sm font-normal text-muted-foreground">/ month</span></p>
+              <p className="mt-3 text-3xl font-bold">$3 <span className="text-sm font-normal text-muted-foreground">/ month</span></p>
               <p className="mt-4 text-sm text-muted-foreground">Higher limits across imports, generation, explanations, and AI solutions.</p>
               <Link href="/billing" className="mt-6 block"><Button className="w-full">Choose monthly</Button></Link>
             </Card>
